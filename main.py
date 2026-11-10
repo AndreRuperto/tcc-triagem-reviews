@@ -15,9 +15,6 @@ import matplotlib.pyplot as plt
 
 from src.classificador import classify_review
 
-BASE_VERSION = "1.0"
-
-
 def load_knowledge_base(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as file:
         data = json.load(file)
@@ -25,6 +22,8 @@ def load_knowledge_base(path: Path) -> dict:
     required_groups = {"tecnico", "afetivo_visual"}
     if not required_groups.issubset(data.keys()):
         raise ValueError("A base deve possuir os grupos 'tecnico' e 'afetivo_visual'.")
+    if "versao" not in data:
+        raise ValueError("A base deve informar sua 'versao' para rastreabilidade dos resultados.")
 
     return data
 
@@ -49,7 +48,7 @@ def classify_dataframe(dataframe: pd.DataFrame, knowledge_base: dict) -> pd.Data
         lambda text: classify_review(text, knowledge_base)
     )
     results_df = pd.DataFrame(results.tolist())
-    results_df["versao_base"] = BASE_VERSION
+    results_df["versao_base"] = knowledge_base["versao"]
 
     return pd.concat([prepared, results_df], axis=1)
 

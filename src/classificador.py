@@ -17,6 +17,13 @@ v1.2: corrige dupla contagem de indicadores diferentes que reduzem
 ao mesmo radical (ex: "fecha sozinho" e "fechando sozinho"), que
 inflava o escore ao contar duas vezes a mesma variacao morfologica
 de um unico conceito. Ver docs/observacoes_teste_v1.md.
+
+v1.3: a correcao da v1.2 dependia da ordem dos indicadores na base
+(se o casamento por radical vinha antes do literal, o escore ainda era
+somado duas vezes). Agora o casamento literal roda para todos os
+indicadores antes do casamento por radical. Radicais de uma unica
+palavra com menos de 3 letras deixam de casar sozinhos (overstemming
+do RSLP, ex: "trava" e "trem" -> "tr"). Ver docs/decisao_stemming.md.
 """
 
 import re
@@ -88,33 +95,58 @@ def find_indicators(text: str, indicators: dict) -> tuple:
     stemmed_text = stem_phrase(text)
     matched_stems = set()
 
+    prepared = []
     for indicator, weight in indicators.items():
         normalized_indicator = normalize_text(indicator)
-        stemmed_indicator = stem_phrase(normalized_indicator)
-
-        literal_pattern = (
-            r"(?<![a-z0-9])" + re.escape(normalized_indicator) + r"(?![a-z0-9])"
+        prepared.append(
+            (indicator, int(weight), normalized_indicator, stem_phrase(normalized_indicator))
         )
-        if re.search(literal_pattern, text):
-            score += int(weight)
+
+    # Etapa 1: comparacao literal. Roda para TODOS os indicadores antes
+    # da etapa por radical, para que o casamento exato tenha prioridade
+    # no registro de auditoria independentemente da ordem na base.
+    for indicator, weight, normalized_indicator, stemmed_indicator in prepared:
+        if stemmed_indicator in matched_stems:
+            # Mesmo radical ja contabilizado (ex: "bug" e "bugs").
+            continue
+        if _contains(text, normalized_indicator):
+            score += weight
             found.append(indicator)
             matched_stems.add(stemmed_indicator)
-            continue
 
+    # Etapa 2: comparacao por radical, apenas para indicadores cujo
+    # radical ainda nao foi contabilizado.
+    for indicator, weight, _normalized, stemmed_indicator in prepared:
         if stemmed_indicator in matched_stems:
-            # Ja contabilizado por outro indicador com o mesmo radical
-            # nesta mesma chamada - evita dupla contagem.
             continue
-
-        stem_pattern = (
-            r"(?<![a-z0-9])" + re.escape(stemmed_indicator) + r"(?![a-z0-9])"
-        )
-        if stemmed_indicator and re.search(stem_pattern, stemmed_text):
-            score += int(weight)
+        if not _stem_is_reliable(stemmed_indicator):
+            continue
+        if _contains(stemmed_text, stemmed_indicator):
+            score += weight
             found.append(f"{indicator} (via radical)")
             matched_stems.add(stemmed_indicator)
 
     return score, found
+
+
+# Radicais de uma unica palavra com menos letras que isso sao ambiguos
+# demais para casar sozinhos (ex: RSLP reduz "trava" e "trem" a "tr").
+MIN_SINGLE_WORD_STEM_LENGTH = 3
+
+
+def _stem_is_reliable(stemmed_indicator: str) -> bool:
+    """Indica se o radical e especifico o bastante para o casamento por radical."""
+    if not stemmed_indicator:
+        return False
+    if " " in stemmed_indicator:
+        return True
+    return len(stemmed_indicator) >= MIN_SINGLE_WORD_STEM_LENGTH
+
+
+def _contains(text: str, expression: str) -> bool:
+    """Busca a expressao no texto respeitando limites de palavra."""
+    pattern = r"(?<![a-z0-9])" + re.escape(expression) + r"(?![a-z0-9])"
+    return re.search(pattern, text) is not None
 
 
 def calculate_confidence(technical_score: int, affective_score: int) -> float:

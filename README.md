@@ -1,4 +1,3 @@
-cat > README.md << 'EOF'
 # Triagem de Reviews de Jogos Digitais com IA Simbólica
 
 TCC — Ciência da Computação — UDF — Melissa Aragão Leite (2026_2)
@@ -23,7 +22,19 @@ projeto_reviews/
 ├── reports/    # gráficos e relatórios gerados
 ├── src/        # código-fonte do sistema especialista
 ├── docs/       # documentação de decisões técnicas
+├── tests/      # testes automatizados do classificador
 └── main.py     # ponto de entrada
+
+## Como rodar os testes
+Na raiz do projeto (dentro do container ou com as dependências instaladas):
+
+    python -m unittest discover -s tests
+
+Pelo Docker, sem instalar nada no host (o `COPY . .` do Dockerfile já
+inclui a pasta tests/):
+
+    docker compose build
+    docker compose run --rm classificador python -m unittest discover -s tests
 
 ## Status atual
 - [x] VM provisionada e configurada
@@ -34,6 +45,8 @@ projeto_reviews/
 - [x] Base de conhecimento inicial (v1.0)
 - [x] Classificador implementado e testado (7 reviews de exemplo, via Docker/Portainer)
 - [x] Classificador com stemming (RSLP) implementado e testado
+- [x] Correção da dupla contagem e base de conhecimento v1.1 (classificador v1.3)
+- [x] Testes automatizados (tests/test_classificador.py)
 - [ ] Dicionário de sinônimos curados (config/sinonimos.json)
 - [ ] Coleta de reviews reais (API Steam)
 - [ ] Classificação manual de amostra (gabarito)
@@ -52,4 +65,14 @@ projeto_reviews/
 - Corrigida dupla contagem de indicadores que reduzem ao mesmo radical
   (bug identificado e corrigido na v1.2 do classificador):
   docs/observacoes_teste_v1.md.
-EOF
+- v1.3: a correção da v1.2 só valia quando o casamento literal vinha
+  depois do casamento por radical; a ordem dos indicadores na base mudava
+  o escore. Agora o casamento literal roda para todos os indicadores antes
+  do casamento por radical, e cada radical conta uma única vez.
+- v1.3: radicais de uma palavra só com menos de 3 letras não casam
+  sozinhos (o RSLP reduz "trava" e "trem" a "tr").
+- Base v1.1: o RSLP não aproxima "cai" de "caiu", então o caso do
+  review 3 não era resolvido pelo stemming. Cadastrados "servidor cai"
+  e "trava". A versão da base agora fica no próprio JSON (campo "versao")
+  e é gravada em cada linha do resultado.
+- Versões das bibliotecas fixadas em requirements.txt (RNF6).

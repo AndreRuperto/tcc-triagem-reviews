@@ -1,10 +1,12 @@
 {
+  "versao": "1.1",
   "tecnico": {
     "bug": 1,
     "bugs": 1,
     "erro": 1,
     "travando": 2,
     "travamento": 2,
+    "trava": 2,
     "fecha sozinho": 3,
     "fechando sozinho": 3,
     "queda de fps": 3,
@@ -14,6 +16,7 @@
     "nao inicia": 3,
     "erro no servidor": 3,
     "servidor caiu": 3,
+    "servidor cai": 3,
     "lag": 2,
     "atraso no controle": 3,
     "controle nao responde": 3,
