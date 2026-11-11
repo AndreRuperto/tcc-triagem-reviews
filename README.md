@@ -44,8 +44,10 @@ docs/protocolo_rotulagem.md. Pelo Docker, prefixe cada comando com
     # 1. coletar reviews em português (não precisa de chave de API)
     #    todos os jogos de config/jogos.json; o resumo mostra quantas existem em pt-BR
     python -m src.coleta_steam --lote config/jogos.json --max 100
-    #    ou um jogo só (appid = número na URL da loja)
-    python -m src.coleta_steam --appid <id> --jogo "<nome>" --max 500
+    #    ou um jogo só (appid = número na URL da loja), opcionalmente num período
+    python -m src.coleta_steam --appid <id> --jogo "<nome>" --max 500 --periodo 2025-01-30 2025-02-28
+    #    --filtro helpful = mais úteis de todo o histórico; por padrão as reviews
+    #    que a Steam marca como "fora do assunto" (review bombing) ENTRAM na coleta
     # 2. classificar
     python main.py --entrada data/steam_<id>.csv
     # 3. sortear a amostra cega para rotulagem manual
@@ -95,6 +97,11 @@ docs/protocolo_rotulagem.md. Pelo Docker, prefixe cada comando com
   e "trava". A versão da base agora fica no próprio JSON (campo "versao")
   e é gravada em cada linha do resultado.
 - Versões das bibliotecas fixadas em requirements.txt (RNF6).
+- Coleta migrada para a Web API IUserReviewsService/GetAppReviews: a
+  Valve desligou o endpoint store.steampowered.com/appreviews em
+  outubro de 2026. A API nova esconde por padrão as reviews que a Steam
+  marca como fora do assunto (como ela trata review bombing); o coletor
+  pede filter_offtopic_activity=false para elas entrarem.
 - Coleta: o identificador do autor (steamid) não é gravado; só o texto
   e metadados agregados (data, votos, horas jogadas).
 - Gabarito cego: a planilha de rotulagem não mostra a resposta do

@@ -1,5 +1,6 @@
 """Testes da coleta (com a API simulada), da amostragem e da avaliacao."""
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -19,7 +20,14 @@ def review_api(rid, texto, positivo=False, horas_min=120):
     }
 
 
+def pagina(**campos):
+    """Uma pagina no formato da GetAppReviews: tudo dentro de "response"."""
+    return {"response": campos}
+
+
 class RespostaFalsa:
+    status_code = 200
+
     def __init__(self, dados):
         self.dados = dados
 
@@ -35,10 +43,14 @@ class SessaoFalsa:
 
     def __init__(self, paginas):
         self.paginas, self.cursores, self.headers = list(paginas), [], {}
+        self.urls, self.entradas = [], []
 
     def get(self, url, params, timeout):
-        self.cursores.append(params["cursor"])
-        return RespostaFalsa(self.paginas.pop(0) if self.paginas else {"success": 1, "reviews": [], "cursor": "fim"})
+        self.urls.append(url)
+        entrada = json.loads(params["input_json"])
+        self.entradas.append(entrada)
+        self.cursores.append(entrada["cursor"])
+        return RespostaFalsa(self.paginas.pop(0) if self.paginas else {"response": {"reviews": [], "cursor": "fim"}})
 
 
 class TestColetaSteam(unittest.TestCase):
@@ -48,27 +60,62 @@ class TestColetaSteam(unittest.TestCase):
         self.assertEqual(linha["recomendado"], "nao")
         self.assertEqual(linha["data_criacao"], "2026-01-01")
         self.assertEqual(linha["horas_jogadas"], 1.5)
+        self.assertEqual(linha["horas_na_review"], 0.0)
         self.assertNotIn("76561190000000000", str(linha))
         self.assertEqual(set(linha), set(coleta_steam.COLUNAS))
 
     def test_pagina_pelo_cursor_e_para_no_maximo(self):
         sessao = SessaoFalsa([
-            {"success": 1, "cursor": "c1", "reviews": [review_api(1, "a"), review_api(2, "b")]},
-            {"success": 1, "cursor": "c2", "reviews": [review_api(3, "c"), review_api(4, "d")]},
+            pagina(cursor="c1", reviews=[review_api(1, "a"), review_api(2, "b")]),
+            pagina(cursor="c2", reviews=[review_api(3, "c"), review_api(4, "d")]),
         ])
         linhas = coleta_steam.coletar(10, "J", maximo=3, pausa=0, sessao=sessao)
         self.assertEqual([l["id_review"] for l in linhas], ["1", "2", "3"])
         self.assertEqual(sessao.cursores, ["*", "c1"])
 
+    def test_pede_a_api_nova_com_enums_numericos_e_review_bombing_incluido(self):
+        sessao = SessaoFalsa([pagina(cursor="c1", reviews=[review_api(1, "a")])])
+        coleta_steam.coletar(2651280, "J", maximo=1, pausa=0, sessao=sessao)
+        self.assertEqual(sessao.urls[0], "https://api.steampowered.com/IUserReviewsService/GetAppReviews/v1/")
+        e = sessao.entradas[0]
+        self.assertEqual(e["appid"], 2651280)
+        self.assertEqual(e["filter"], 1)              # recent
+        self.assertEqual(e["languages"], ["brazilian"])
+        self.assertEqual(e["purchase_type"], 1)       # todas as compras
+        self.assertEqual(e["review_type"], 0)         # positivas e negativas
+        self.assertIs(e["filter_offtopic_activity"], False)
+
+    def test_opcoes_de_ordenacao(self):
+        e = json.loads(coleta_steam.montar_parametros("*", "brazilian", "helpful", 1)["input_json"])
+        self.assertEqual((e["filter"], e["day_range"]), (0, 0))
+        e = json.loads(coleta_steam.montar_parametros("*", "brazilian", "recent", 1, False)["input_json"])
+        self.assertIs(e["filter_offtopic_activity"], True)
+        self.assertNotIn("day_range", e)
+        with self.assertRaises(ValueError):
+            coleta_steam.montar_parametros("*", "brazilian", "all", 1)
+
+    def test_periodo_vira_timestamps_utc(self):
+        e = json.loads(coleta_steam.montar_parametros("*", "brazilian", "recent", 1,
+                                                      periodo=("2025-01-30", "2025-02-28"))["input_json"])
+        self.assertEqual(e["date_range_start"], 1738195200)   # 2025-01-30 00:00:00 UTC
+        self.assertEqual(e["date_range_end"], 1740787199)     # 2025-02-28 23:59:59 UTC
+
+    def test_lote_usa_o_periodo_de_cada_jogo(self):
+        sessao = SessaoFalsa([pagina(cursor="c1", reviews=[review_api(1, "a")])])
+        with tempfile.TemporaryDirectory() as pasta:
+            coleta_steam.coletar_lote([{"appid": 5, "jogo": "J", "periodo": ["2025-01-30", "2025-02-28"]}],
+                                      1, "brazilian", "recent", Path(pasta), pausa=0, sessao=sessao)
+        self.assertEqual(sessao.entradas[0]["date_range_start"], 1738195200)
+
     def test_para_quando_a_api_repete_reviews(self):
-        pagina = {"success": 1, "cursor": "c1", "reviews": [review_api(1, "a")]}
-        sessao = SessaoFalsa([pagina, dict(pagina, cursor="c2")])
+        sessao = SessaoFalsa([pagina(cursor="c1", reviews=[review_api(1, "a")]),
+                              pagina(cursor="c2", reviews=[review_api(1, "a")])])
         linhas = coleta_steam.coletar(10, "J", maximo=100, pausa=0, sessao=sessao)
         self.assertEqual(len(linhas), 1)
 
     def test_informa_total_disponivel(self):
-        sessao = SessaoFalsa([{"success": 1, "cursor": "c1", "query_summary": {"total_reviews": 873},
-                               "reviews": [review_api(1, "a")]}])
+        sessao = SessaoFalsa([pagina(cursor="c1", query_summary={"total_reviews": 873},
+                                     reviews=[review_api(1, "a")])])
         info = {}
         coleta_steam.coletar(10, "J", maximo=1, pausa=0, sessao=sessao, info=info)
         self.assertEqual(info["total_disponivel"], 873)
@@ -84,9 +131,9 @@ class TestColetaSteam(unittest.TestCase):
 
     def test_lote_segue_quando_um_jogo_falha(self):
         sessao = SessaoFalsa([
-            {"success": 2},
-            {"success": 1, "cursor": "c1", "query_summary": {"total_reviews": 2},
-             "reviews": [review_api(1, "a"), review_api(2, "b")]},
+            {"erro": "sem response"},
+            pagina(cursor="c1", query_summary={"total_reviews": 2},
+                   reviews=[review_api(1, "a"), review_api(2, "b")]),
         ])
         jogos = [{"appid": 1, "jogo": "Ruim"}, {"appid": 2, "jogo": "Bom"}]
         with tempfile.TemporaryDirectory() as pasta:
@@ -96,8 +143,15 @@ class TestColetaSteam(unittest.TestCase):
         self.assertTrue(resumo[0]["erro"])
         self.assertEqual((resumo[1]["coletadas"], resumo[1]["disponiveis"], resumo[1]["erro"]), (2, 2, ""))
 
+    def test_limite_de_requisicoes(self):
+        class Resposta429(RespostaFalsa):
+            status_code = 429
+        sessao = SessaoFalsa([])
+        sessao.get = lambda url, params, timeout: Resposta429(None)
+        with self.assertRaisesRegex(RuntimeError, "429"):
+            coleta_steam.coletar(10, "J", maximo=5, pausa=0, sessao=sessao)
+
     def test_lista_de_jogos_do_projeto_e_valida(self):
-        import json
         with open(Path(__file__).resolve().parent.parent / "config" / "jogos.json", encoding="utf-8") as f:
             jogos = json.load(f)["jogos"]
         self.assertTrue(jogos)
@@ -106,8 +160,8 @@ class TestColetaSteam(unittest.TestCase):
             self.assertTrue(jogo["jogo"])
 
     def test_falha_da_api(self):
-        sessao = SessaoFalsa([{"success": 2}])
-        with self.assertRaises(RuntimeError):
+        sessao = SessaoFalsa([{"erro": "sem response"}])
+        with self.assertRaisesRegex(RuntimeError, "inesperada"):
             coleta_steam.coletar(10, "J", maximo=5, pausa=0, sessao=sessao)
 
 
