@@ -14,7 +14,7 @@
 - 33 testes (`python -m unittest discover -s tests`).
 
 ## Estado atual
-- **Funciona e foi testado:** os 29 testes, no Python local e dentro da imagem Docker x86; fluxo completo pela linha de comando com dados de exemplo.
+- **Funciona e foi testado:** os testes, no Python local (33) e dentro da imagem Docker x86 (29, antes da coleta em lote); fluxo completo pela linha de comando com dados de exemplo.
 - **Não testado:**
   - coleta contra a API real da Steam (não deu para acessar daqui; o código segue o formato documentado e foi testado com respostas simuladas);
   - build da imagem em ARM64 (a VM Oracle). As versões fixadas têm pacote para Python 3.11 aarch64, mas o build não foi rodado lá.
