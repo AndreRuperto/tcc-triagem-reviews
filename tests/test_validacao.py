@@ -66,6 +66,45 @@ class TestColetaSteam(unittest.TestCase):
         linhas = coleta_steam.coletar(10, "J", maximo=100, pausa=0, sessao=sessao)
         self.assertEqual(len(linhas), 1)
 
+    def test_informa_total_disponivel(self):
+        sessao = SessaoFalsa([{"success": 1, "cursor": "c1", "query_summary": {"total_reviews": 873},
+                               "reviews": [review_api(1, "a")]}])
+        info = {}
+        coleta_steam.coletar(10, "J", maximo=1, pausa=0, sessao=sessao, info=info)
+        self.assertEqual(info["total_disponivel"], 873)
+
+    def test_resposta_que_nao_e_json(self):
+        class RespostaHtml(RespostaFalsa):
+            def json(self):
+                raise ValueError("Expecting value")
+        sessao = SessaoFalsa([])
+        sessao.get = lambda url, params, timeout: RespostaHtml(None)
+        with self.assertRaisesRegex(RuntimeError, "nao devolveu JSON"):
+            coleta_steam.coletar(10, "J", maximo=5, pausa=0, sessao=sessao)
+
+    def test_lote_segue_quando_um_jogo_falha(self):
+        sessao = SessaoFalsa([
+            {"success": 2},
+            {"success": 1, "cursor": "c1", "query_summary": {"total_reviews": 2},
+             "reviews": [review_api(1, "a"), review_api(2, "b")]},
+        ])
+        jogos = [{"appid": 1, "jogo": "Ruim"}, {"appid": 2, "jogo": "Bom"}]
+        with tempfile.TemporaryDirectory() as pasta:
+            resumo = coleta_steam.coletar_lote(jogos, 5, "brazilian", "recent", Path(pasta), pausa=0, sessao=sessao)
+            self.assertTrue((Path(pasta) / "steam_2.csv").exists())
+            self.assertFalse((Path(pasta) / "steam_1.csv").exists())
+        self.assertTrue(resumo[0]["erro"])
+        self.assertEqual((resumo[1]["coletadas"], resumo[1]["disponiveis"], resumo[1]["erro"]), (2, 2, ""))
+
+    def test_lista_de_jogos_do_projeto_e_valida(self):
+        import json
+        with open(Path(__file__).resolve().parent.parent / "config" / "jogos.json", encoding="utf-8") as f:
+            jogos = json.load(f)["jogos"]
+        self.assertTrue(jogos)
+        for jogo in jogos:
+            self.assertIsInstance(jogo["appid"], int)
+            self.assertTrue(jogo["jogo"])
+
     def test_falha_da_api(self):
         sessao = SessaoFalsa([{"success": 2}])
         with self.assertRaises(RuntimeError):

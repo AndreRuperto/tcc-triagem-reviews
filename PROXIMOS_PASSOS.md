@@ -6,12 +6,12 @@
 - Classificador v1.3: dupla contagem corrigida de verdade (não depende da ordem da base), radicais curtos demais não casam sozinhos.
 - Base de conhecimento v1.1 ("servidor cai", "trava"; versão gravada no JSON e em cada resultado).
 - Ferramentas de validação:
-  - `src/coleta_steam.py`: reviews pt-BR da API pública da Steam, sem gravar o steamid;
+  - `src/coleta_steam.py`: reviews pt-BR da API pública da Steam (sem chave), sem gravar o steamid; modo `--lote` com resumo do volume disponível;
   - `src/amostragem.py`: amostra estratificada e cega para o gabarito;
   - `src/avaliacao.py`: matriz de confusão, precisão/revocação/F1, kappa entre anotadores, lista de divergências.
 - `main.py --entrada/--saida` para classificar qualquer CSV.
 - Protocolo de rotulagem (rascunho): `docs/protocolo_rotulagem.md`.
-- 29 testes (`python -m unittest discover -s tests`).
+- 33 testes (`python -m unittest discover -s tests`).
 
 ## Estado atual
 - **Funciona e foi testado:** os 29 testes, no Python local e dentro da imagem Docker x86; fluxo completo pela linha de comando com dados de exemplo.
@@ -21,8 +21,10 @@
 
 ## Próximos passos (em ordem)
 - [ ] Na VM: `docker compose build` e `docker compose run --rm classificador python -m unittest discover -s tests`.
-- [ ] Escolher os jogos (appids) da pesquisa e justificar a escolha no TCC.
-- [ ] Coletar: `python -m src.coleta_steam --appid <id> --jogo "<nome>" --max 500` e conferir o CSV.
+- [ ] Na VM, checar o volume em pt-BR dos 4 candidatos de `config/jogos.json` (não precisa de chave de API):
+      `docker compose run --rm classificador python -m src.coleta_steam --lote config/jogos.json --max 100`
+- [ ] Ler uma amostra de cada CSV: a crítica à aparência aparece mesmo nas reviews da Steam? Fechar a lista e justificar no TCC.
+- [ ] Coleta definitiva com `--max` maior (e `--filtro all` para pegar as mais úteis, onde costuma estar o pico do review bombing).
 - [ ] Classificar: `python main.py --entrada data/steam_<id>.csv` (para vários jogos, juntar os CSVs antes).
 - [ ] Revisar `docs/protocolo_rotulagem.md` (definições das categorias e casos difíceis) com a orientação.
 - [ ] Gerar a amostra cega: `python -m src.amostragem --tamanho 200`.

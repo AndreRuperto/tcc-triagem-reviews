@@ -41,7 +41,10 @@ Protocolo completo, com as regras de rotulagem e de cegamento, em
 docs/protocolo_rotulagem.md. Pelo Docker, prefixe cada comando com
 `docker compose run --rm classificador`.
 
-    # 1. coletar reviews em português de um jogo (appid = número na URL da loja)
+    # 1. coletar reviews em português (não precisa de chave de API)
+    #    todos os jogos de config/jogos.json; o resumo mostra quantas existem em pt-BR
+    python -m src.coleta_steam --lote config/jogos.json --max 100
+    #    ou um jogo só (appid = número na URL da loja)
     python -m src.coleta_steam --appid <id> --jogo "<nome>" --max 500
     # 2. classificar
     python main.py --entrada data/steam_<id>.csv
