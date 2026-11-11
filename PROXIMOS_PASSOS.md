@@ -26,7 +26,7 @@ Achados (importantes para a metodologia):
 - Classificando as 400: Indefinido 350, Técnico 47, Afetivo-visual 1, Misto 1.
 - A crítica de representação em pt-BR aparece com outro vocabulário ("lacração", "woke", "forçaram a barra com a MJ"), mais ideológico/narrativo do que sobre aparência. A base de conhecimento não cobre isso. Decisão da autora com a orientação: ampliar a categoria afetivo-visual (e a base) ou manter a definição restrita à aparência e registrar a raridade como resultado.
 - Spider-Man 2 no mês do lançamento no PC (fev/2025): 12 de 100 reviews citam MJ/woke/aparência, quase sempre o papel dela na história, não o rosto.
-- Os CSVs coletados ficaram em `data/steam_*.csv`, fora do commit (ver decisão abaixo).
+- Os CSVs coletados estão versionados em `data/steam_*.csv` (textos públicos da Steam, sem o steamid).
 
 ## Estado atual
 - **Funciona e foi testado:** os 38 testes no Python local (a imagem Docker x86 passou nos 33 da versão anterior); coleta real pela API nova da Steam; fluxo completo pela linha de comando com dados de exemplo.
@@ -38,7 +38,6 @@ Achados (importantes para a metodologia):
 - [ ] Na VM, checar o volume em pt-BR dos 4 candidatos de `config/jogos.json` (não precisa de chave de API):
       `docker compose run --rm classificador python -m src.coleta_steam --lote config/jogos.json --max 100`
 - [ ] Ler uma amostra de cada CSV: a crítica à aparência aparece mesmo nas reviews da Steam? Fechar a lista e justificar no TCC.
-- [ ] Decidir se os CSVs de reviews coletadas entram no repositório (são textos públicos da Steam, sem o steamid; o fork é público).
 - [ ] Decidir a definição da categoria afetivo-visual diante do vocabulário real ("lacração", "woke").
 - [ ] Coleta definitiva por período, nas semanas de lançamento de cada jogo (`--periodo DE ATE`, ou "periodo" no `config/jogos.json`), e/ou `--filtro helpful` para as mais úteis de todo o histórico.
 - [ ] Classificar: `python main.py --entrada data/steam_<id>.csv` (para vários jogos, juntar os CSVs antes).
