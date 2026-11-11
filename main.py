@@ -7,6 +7,7 @@ conhecimento -> calculo dos escores -> aplicacao das regras ->
 classificacao -> relatorios.
 """
 
+import argparse
 import json
 from pathlib import Path
 
@@ -90,17 +91,24 @@ def export_reports(dataframe: pd.DataFrame, output_directory: Path) -> None:
     generate_category_chart(dataframe, output_directory / "distribuicao_categorias.png")
 
 
-def main() -> None:
+def main(argv=None) -> None:
     project_dir = Path(__file__).resolve().parent
-    input_path = project_dir / "data" / "reviews_entrada.csv"
+    parser = argparse.ArgumentParser(description="Classifica reviews com o sistema especialista.")
+    parser.add_argument("--entrada", type=Path, default=project_dir / "data" / "reviews_entrada.csv",
+                        help="CSV de entrada (padrao: data/reviews_entrada.csv)")
+    parser.add_argument("--saida", type=Path, default=project_dir / "reports",
+                        help="Pasta dos relatorios (padrao: reports/)")
+    args = parser.parse_args(argv)
+
+    input_path = args.entrada
     knowledge_base_path = project_dir / "config" / "base_conhecimento.json"
-    output_dir = project_dir / "reports"
+    output_dir = args.saida
 
     if not input_path.exists():
         raise FileNotFoundError(f"Arquivo de entrada nao encontrado: {input_path}")
 
     knowledge_base = load_knowledge_base(knowledge_base_path)
-    input_df = pd.read_csv(input_path, encoding="utf-8")
+    input_df = pd.read_csv(input_path, encoding="utf-8-sig", dtype={"id_review": str})
 
     classified_df = classify_dataframe(input_df, knowledge_base)
     export_reports(classified_df, output_dir)

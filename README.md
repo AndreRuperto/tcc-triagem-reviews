@@ -36,6 +36,21 @@ inclui a pasta tests/):
     docker compose build
     docker compose run --rm classificador python -m unittest discover -s tests
 
+## Fluxo de validação (reviews reais → gabarito → métricas)
+Protocolo completo, com as regras de rotulagem e de cegamento, em
+docs/protocolo_rotulagem.md. Pelo Docker, prefixe cada comando com
+`docker compose run --rm classificador`.
+
+    # 1. coletar reviews em português de um jogo (appid = número na URL da loja)
+    python -m src.coleta_steam --appid <id> --jogo "<nome>" --max 500
+    # 2. classificar
+    python main.py --entrada data/steam_<id>.csv
+    # 3. sortear a amostra cega para rotulagem manual
+    python -m src.amostragem --tamanho 200
+    # 4. preencher categoria_manual e salvar como data/gabarito_rotulado.csv
+    # 5. matriz de confusão, precisão, revocação, F1 (e kappa, com --segundo)
+    python -m src.avaliacao --gabarito data/gabarito_rotulado.csv
+
 ## Status atual
 - [x] VM provisionada e configurada
 - [x] Docker instalado e testado
@@ -46,10 +61,11 @@ inclui a pasta tests/):
 - [x] Classificador implementado e testado (7 reviews de exemplo, via Docker/Portainer)
 - [x] Classificador com stemming (RSLP) implementado e testado
 - [x] Correção da dupla contagem e base de conhecimento v1.1 (classificador v1.3)
-- [x] Testes automatizados (tests/test_classificador.py)
+- [x] Testes automatizados (tests/)
+- [x] Ferramentas de validação: coletor Steam, amostra cega, avaliação (matriz de confusão, F1, kappa)
 - [ ] Dicionário de sinônimos curados (config/sinonimos.json)
-- [ ] Coleta de reviews reais (API Steam)
-- [ ] Classificação manual de amostra (gabarito)
+- [ ] Escolher os jogos e coletar reviews reais (API Steam)
+- [ ] Revisar docs/protocolo_rotulagem.md e rotular a amostra (gabarito)
 - [ ] Comparação automático x manual / ajuste de pesos
 - [ ] Relatórios finais gerados
 
@@ -76,3 +92,8 @@ inclui a pasta tests/):
   e "trava". A versão da base agora fica no próprio JSON (campo "versao")
   e é gravada em cada linha do resultado.
 - Versões das bibliotecas fixadas em requirements.txt (RNF6).
+- Coleta: o identificador do autor (steamid) não é gravado; só o texto
+  e metadados agregados (data, votos, horas jogadas).
+- Gabarito cego: a planilha de rotulagem não mostra a resposta do
+  sistema; a amostra é estratificada pela categoria automática, com
+  semente fixa, para as classes raras terem exemplos suficientes.
