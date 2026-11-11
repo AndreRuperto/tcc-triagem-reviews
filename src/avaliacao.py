@@ -166,6 +166,10 @@ def main(argv=None) -> None:
     resultado = avaliar(classificados, ler_gabarito(args.gabarito), segundo, args.saida)
     print(texto_resumo(resultado))
     print(f"Arquivos em {args.saida}")
+    # se a avaliacao ficou ao lado dos classificados (padrao reports/avaliacao), refaz o painel com a matriz
+    if args.saida.resolve().parent == args.classificados.resolve().parent:
+        from src.painel import gerar_painel
+        print(f"Painel atualizado: {gerar_painel(args.classificados.parent)}")
 
 
 if __name__ == "__main__":

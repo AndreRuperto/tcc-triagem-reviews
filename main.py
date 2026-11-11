@@ -15,6 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from src.classificador import classify_review
+from src.painel import gerar_painel
 
 def load_knowledge_base(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as file:
@@ -89,26 +90,30 @@ def export_reports(dataframe: pd.DataFrame, output_directory: Path) -> None:
     summary.to_csv(output_directory / "resumo_categorias.csv", index=False, encoding="utf-8-sig")
 
     generate_category_chart(dataframe, output_directory / "distribuicao_categorias.png")
+    gerar_painel(output_directory)
 
 
 def main(argv=None) -> None:
     project_dir = Path(__file__).resolve().parent
     parser = argparse.ArgumentParser(description="Classifica reviews com o sistema especialista.")
-    parser.add_argument("--entrada", type=Path, default=project_dir / "data" / "reviews_entrada.csv",
-                        help="CSV de entrada (padrao: data/reviews_entrada.csv)")
+    parser.add_argument("--entrada", type=Path, nargs="+", default=[project_dir / "data" / "reviews_entrada.csv"],
+                        help="Um ou mais CSVs de entrada, juntados antes da classificacao (padrao: data/reviews_entrada.csv)")
     parser.add_argument("--saida", type=Path, default=project_dir / "reports",
                         help="Pasta dos relatorios (padrao: reports/)")
     args = parser.parse_args(argv)
 
-    input_path = args.entrada
     knowledge_base_path = project_dir / "config" / "base_conhecimento.json"
     output_dir = args.saida
 
-    if not input_path.exists():
-        raise FileNotFoundError(f"Arquivo de entrada nao encontrado: {input_path}")
+    for input_path in args.entrada:
+        if not input_path.exists():
+            raise FileNotFoundError(f"Arquivo de entrada nao encontrado: {input_path}")
 
     knowledge_base = load_knowledge_base(knowledge_base_path)
-    input_df = pd.read_csv(input_path, encoding="utf-8-sig", dtype={"id_review": str})
+    input_df = pd.concat(
+        [pd.read_csv(caminho, encoding="utf-8-sig", dtype={"id_review": str}) for caminho in args.entrada],
+        ignore_index=True,
+    )
 
     classified_df = classify_dataframe(input_df, knowledge_base)
     export_reports(classified_df, output_dir)

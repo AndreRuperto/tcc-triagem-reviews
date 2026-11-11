@@ -48,13 +48,24 @@ docs/protocolo_rotulagem.md. Pelo Docker, prefixe cada comando com
     python -m src.coleta_steam --appid <id> --jogo "<nome>" --max 500 --periodo 2025-01-30 2025-02-28
     #    --filtro helpful = mais úteis de todo o histórico; por padrão as reviews
     #    que a Steam marca como "fora do assunto" (review bombing) ENTRAM na coleta
-    # 2. classificar
-    python main.py --entrada data/steam_<id>.csv
+    # 2. classificar (aceita vários CSVs, que são juntados)
+    python main.py --entrada data/steam_*.csv --saida reports/steam
     # 3. sortear a amostra cega para rotulagem manual
     python -m src.amostragem --tamanho 200
     # 4. preencher categoria_manual e salvar como data/gabarito_rotulado.csv
     # 5. matriz de confusão, precisão, revocação, F1 (e kappa, com --segundo)
     python -m src.avaliacao --gabarito data/gabarito_rotulado.csv
+
+## Painel de resultados
+Cada classificação gera também `painel.html` na pasta de relatórios
+(ex.: `reports/steam/painel.html`): um arquivo só, que abre offline em
+qualquer navegador, pensado para a apresentação à banca. Mostra a
+divisão por categoria e por jogo, os indicadores mais acionados, a
+matriz de confusão (depois da avaliação) e cada review com os
+indicadores marcados no próprio texto, o que deixa a classificação
+auditável a olho. Para gerar de novo sem reclassificar:
+
+    python -m src.painel --pasta reports/steam
 
 ## Status atual
 - [x] VM provisionada e configurada
