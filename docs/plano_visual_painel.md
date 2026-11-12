@@ -170,3 +170,43 @@ avaliação com comandos copiáveis). **Plano concluído.**
 
 As fases 1 e 2 são as que mais mudam o que a banca vê. A fase 3.5
 depende de existir o gabarito manual.
+
+## Segunda rodada: regras de design (12/11/2026, feita)
+
+Crítica da tela pronta em 1280 px, depois das cinco fases:
+
+- O título do TCC competia com a frase-achado, que é a mensagem.
+- Treze "pílulas" na primeira tela (ferramentas, índice, botões).
+- Todas as seções com o mesmo peso, e metade direita vazia em várias.
+- Legenda de cores repetida embaixo da linha do tempo.
+- A recomendação trouxe duas cores (verde e salmão) fora da paleta.
+- Tamanhos de letra soltos (.75, .8, .85, .9, .95 rem).
+
+O que foi aplicado:
+
+- **Estrutura de margem.** A partir de 960 px, cada seção tem o título e
+  a explicação numa coluna de margem (14,5 rem) e os dados ao lado, como
+  anotação de margem num texto marcado. Na lista de reviews, os filtros
+  ficam na margem e acompanham a rolagem. Abaixo de 960 px e na
+  impressão, tudo empilha.
+- **Hierarquia do topo.** O título do TCC virou um rótulo pequeno na
+  margem; a frase-achado é o maior texto da página, na mesma serifa dos
+  reviews (é um texto lido e marcado, como eles).
+- **Escala tipográfica única**, razão 1,25 (`--t-p` .875, `--t-0` 1,
+  `--t-1` 1,25, `--t-2` 1,5625, `--t-3` 1,953 rem), mais `--t-leitura`
+  para a serifa dos reviews. Nenhum tamanho solto no CSS (o script de
+  mudança verificava isso).
+- **Forma com significado.** Pílula só no que liga e desliga (filtros de
+  categoria, etiquetas). Ações são retângulos discretos de 4 px; o
+  índice virou links de texto sublinhados.
+- **Paleta só das categorias.** A recomendação passou a ser uma barra
+  única na cor do texto; saíram os tokens `--sim` e `--nao` e a legenda
+  deles.
+- **Legenda como tabela**, com os números alinhados (reviews, % do
+  total, % dos com indicador) e a regra de cada categoria.
+- **Um acessório a menos:** a legenda repetida da linha do tempo saiu.
+- Correção encontrada na crítica: marcas deslocadas em reviews com
+  emoji (o Python contava 1 caractere, o navegador 2).
+
+O que não mudou: paleta das categorias, marca-texto, arquivo único
+offline, textContent, impressão no tema claro.

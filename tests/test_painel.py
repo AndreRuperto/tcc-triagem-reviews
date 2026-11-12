@@ -32,6 +32,15 @@ class TestMarcarTrechos(unittest.TestCase):
         self.assertEqual(painel.marcar_trechos("um flagrante", ["lag"], []), [])
 
 
+class TestPosicoesNoNavegador(unittest.TestCase):
+    def test_emoji_antes_da_marca_nao_desloca(self):
+        texto = "😡 pessimo, fecha sozinho"
+        marcas = painel._para_utf16(texto, painel.marcar_trechos(texto, ["fecha sozinho"], []))
+        em_utf16 = texto.encode("utf-16-le")
+        trecho = em_utf16[marcas[0][0] * 2:marcas[0][1] * 2].decode("utf-16-le")
+        self.assertEqual(trecho, "fecha sozinho")
+
+
 class TestGerarPainel(unittest.TestCase):
     def classificados(self):
         return pd.DataFrame({
