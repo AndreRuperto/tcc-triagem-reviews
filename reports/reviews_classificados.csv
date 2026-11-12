@@ -1,8 +1,8 @@
 ﻿id_review,jogo,nota,recomendado,texto_original,texto_padronizado,escore_tecnico,escore_afetivo,indicadores_tecnicos,indicadores_afetivos,categoria,confianca,regra_acionada,versao_base
-1,Jogo Teste,2,nao,O jogo fecha sozinho durante a primeira fase.,o jogo fecha sozinho durante a primeira fase,3,0,fecha sozinho,,Tecnico,1.0,R1,1.0
-2,Jogo Teste,1,nao,A personagem principal tem um rosto estranho.,a personagem principal tem um rosto estranho,0,2,,rosto estranho,Afetivo-visual,1.0,R2,1.0
-3,Jogo Teste,3,nao,O servidor cai e a protagonista parece um homem.,o servidor cai e a protagonista parece um homem,3,3,servidor cai,parece um homem,Misto,0.5,R3,1.0
-4,Jogo Teste,8,sim,Gostei da historia e da jogabilidade.,gostei da historia e da jogabilidade,0,0,,,Indefinido,0.0,R4,1.0
-5,Jogo Teste,1,nao,"Travando toda hora, impossivel jogar.",travando toda hora impossivel jogar,2,0,travando,,Tecnico,1.0,R1,1.0
-6,Jogo Teste,2,nao,Personagem feia e sem feminilidade nenhuma.,personagem feia e sem feminilidade nenhuma,0,6,,personagem feia; sem feminilidade,Afetivo-visual,1.0,R2,1.0
-7,Jogo Teste,9,sim,"Otimo jogo, recomendo bastante.",otimo jogo recomendo bastante,0,0,,,Indefinido,0.0,R4,1.0
+1,Jogo Teste,2,nao,O jogo fecha sozinho durante a primeira fase.,o jogo fecha sozinho durante a primeira fase,3,0,fecha sozinho,,Tecnico,1.0,R1,1.1
+2,Jogo Teste,1,nao,A personagem principal tem um rosto estranho.,a personagem principal tem um rosto estranho,0,2,,rosto estranho,Afetivo-visual,1.0,R2,1.1
+3,Jogo Teste,3,nao,O servidor cai e a protagonista parece um homem.,o servidor cai e a protagonista parece um homem,3,3,servidor cai,parece um homem,Misto,0.5,R3,1.1
+4,Jogo Teste,8,sim,Gostei da historia e da jogabilidade.,gostei da historia e da jogabilidade,0,0,,,Indefinido,0.0,R4,1.1
+5,Jogo Teste,1,nao,"Travando toda hora, impossivel jogar.",travando toda hora impossivel jogar,2,0,travando,,Tecnico,1.0,R1,1.1
+6,Jogo Teste,2,nao,Personagem feia e sem feminilidade nenhuma.,personagem feia e sem feminilidade nenhuma,0,6,,personagem feia; sem feminilidade,Afetivo-visual,1.0,R2,1.1
+7,Jogo Teste,9,sim,"Otimo jogo, recomendo bastante.",otimo jogo recomendo bastante,0,0,,,Indefinido,0.0,R4,1.1

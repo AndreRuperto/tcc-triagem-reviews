@@ -8,3 +8,19 @@ services:
       - ./config:/app/config
       - ./reports:/app/reports
     restart: "no"
+
+  # Serve os relatorios (painel.html) numa porta local:
+  #   docker compose up -d painel  ->  http://localhost:8090/steam/painel.html
+  # Outra porta: PAINEL_PORTA=9000 docker compose up -d painel
+  # A porta fica presa a 127.0.0.1: na VM o painel NAO fica exposto na
+  # internet; para ver do seu computador use um tunel SSH (ver README).
+  painel:
+    build: .
+    image: tcc-classificador:latest
+    container_name: tcc-painel
+    command: ["python", "-m", "src.servidor", "--porta", "8080", "--endereco", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:${PAINEL_PORTA:-8090}:8080"
+    volumes:
+      - ./reports:/app/reports:ro
+    restart: unless-stopped

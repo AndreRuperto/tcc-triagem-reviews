@@ -1,0 +1,9 @@
+{
+  "_comentario": "Jogos candidatos da pesquisa. A escolha final e a justificativa ficam com a autora e a orientacao. appid = numero na URL da loja Steam.",
+  "jogos": [
+    {"appid": 2651280, "jogo": "Marvel's Spider-Man 2", "motivo": "lancamento no PC com falhas tecnicas e criticas ao rosto da Mary Jane"},
+    {"appid": 2842040, "jogo": "Star Wars Outlaws", "motivo": "criticas a aparencia da protagonista Kay Vess"},
+    {"appid": 1845910, "jogo": "Dragon Age: The Veilguard", "motivo": "polemica de representacao (mais sobre identidade de genero)"},
+    {"appid": 2420110, "jogo": "Horizon Forbidden West", "motivo": "polemica da aparencia da Aloy (2021, antes da versao de PC)"}
+  ]
+}

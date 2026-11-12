@@ -30,16 +30,25 @@ mantem rastreavel qual metodo levou a cada classificacao.
 Stemming resolve variacoes morfologicas da MESMA palavra (flexao
 verbal, genero, numero), mas nao resolve sinonimos verdadeiros
 (palavras diferentes com sentido equivalente, ex: "trava" vs "buga").
-Para esses casos, ver docs/decisao_sinonimos.md.
+Esses casos serao tratados pelo dicionario de sinonimos curados
+(config/sinonimos.json), ainda nao implementado; a decisao sera
+registrada em docs/decisao_sinonimos.md.
 
-## Correcao (2026-11-12): o RSLP nao resolve "cai" x "caiu"
-Ao reexecutar o classificador v1.2, o review 3 continuou como
-Afetivo-visual. Testando o RSLP diretamente:
+## Revisao apos testes automatizados (classificador v1.3, base v1.1)
+Os testes em tests/test_classificador.py mostraram tres pontos:
 
-    servidor -> serv | cai -> cai | caiu -> caiu | caindo -> caind
+1. O RSLP NAO resolve o caso que motivou esta decisao. Ele reduz
+   "servidor caiu" a "serv caiu" e "servidor cai" a "serv cai": os
+   radicais sao diferentes, entao o review 3 continuava Afetivo-visual.
+   Formas verbais irregulares ou curtas nao sao unificadas pelo RSLP.
+   Solucao: cadastrar "servidor cai" na base v1.1. O stemming continua
+   util para flexoes regulares (ex: "fechou sozinho" casa com
+   "fecha sozinho" via radical "fech so").
 
-Ou seja, "cai" e "caiu" nao reduzem ao mesmo radical, e o stemming
-nao cobre esse caso (formas irregulares/curtas do verbo "cair").
-Solucao: cadastrar "servidor cai" (peso 3) explicitamente na base de
-conhecimento, mantendo a decisao auditavel. Formas verbais curtas
-semelhantes devem ir para o dicionario de sinonimos/variacoes curadas.
+2. Excesso de reducao (overstemming): o RSLP reduz "trava", "travas" e
+   "trem" ao mesmo radical "tr". Radicais de uma unica palavra com menos
+   de 3 letras deixaram de casar sozinhos (MIN_SINGLE_WORD_STEM_LENGTH em
+   src/classificador.py), e "trava" foi cadastrado para casar literalmente.
+
+3. Termos curtos ainda podem casar indevidamente via radical (ex: "lag"
+   casa com "lagado"). Fica registrado como limitacao (capitulo 6.3).

@@ -7,6 +7,7 @@ conhecimento -> calculo dos escores -> aplicacao das regras ->
 classificacao -> relatorios.
 """
 
+import argparse
 import json
 from pathlib import Path
 
@@ -14,9 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from src.classificador import classify_review
-
-BASE_VERSION = "1.0"
-
+from src.painel import gerar_painel
 
 def load_knowledge_base(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as file:
@@ -25,6 +24,8 @@ def load_knowledge_base(path: Path) -> dict:
     required_groups = {"tecnico", "afetivo_visual"}
     if not required_groups.issubset(data.keys()):
         raise ValueError("A base deve possuir os grupos 'tecnico' e 'afetivo_visual'.")
+    if "versao" not in data:
+        raise ValueError("A base deve informar sua 'versao' para rastreabilidade dos resultados.")
 
     return data
 
@@ -49,7 +50,7 @@ def classify_dataframe(dataframe: pd.DataFrame, knowledge_base: dict) -> pd.Data
         lambda text: classify_review(text, knowledge_base)
     )
     results_df = pd.DataFrame(results.tolist())
-    results_df["versao_base"] = BASE_VERSION
+    results_df["versao_base"] = knowledge_base["versao"]
 
     return pd.concat([prepared, results_df], axis=1)
 
@@ -89,19 +90,30 @@ def export_reports(dataframe: pd.DataFrame, output_directory: Path) -> None:
     summary.to_csv(output_directory / "resumo_categorias.csv", index=False, encoding="utf-8-sig")
 
     generate_category_chart(dataframe, output_directory / "distribuicao_categorias.png")
+    gerar_painel(output_directory)
 
 
-def main() -> None:
+def main(argv=None) -> None:
     project_dir = Path(__file__).resolve().parent
-    input_path = project_dir / "data" / "reviews_entrada.csv"
-    knowledge_base_path = project_dir / "config" / "base_conhecimento.json"
-    output_dir = project_dir / "reports"
+    parser = argparse.ArgumentParser(description="Classifica reviews com o sistema especialista.")
+    parser.add_argument("--entrada", type=Path, nargs="+", default=[project_dir / "data" / "reviews_entrada.csv"],
+                        help="Um ou mais CSVs de entrada, juntados antes da classificacao (padrao: data/reviews_entrada.csv)")
+    parser.add_argument("--saida", type=Path, default=project_dir / "reports",
+                        help="Pasta dos relatorios (padrao: reports/)")
+    args = parser.parse_args(argv)
 
-    if not input_path.exists():
-        raise FileNotFoundError(f"Arquivo de entrada nao encontrado: {input_path}")
+    knowledge_base_path = project_dir / "config" / "base_conhecimento.json"
+    output_dir = args.saida
+
+    for input_path in args.entrada:
+        if not input_path.exists():
+            raise FileNotFoundError(f"Arquivo de entrada nao encontrado: {input_path}")
 
     knowledge_base = load_knowledge_base(knowledge_base_path)
-    input_df = pd.read_csv(input_path, encoding="utf-8")
+    input_df = pd.concat(
+        [pd.read_csv(caminho, encoding="utf-8-sig", dtype={"id_review": str}) for caminho in args.entrada],
+        ignore_index=True,
+    )
 
     classified_df = classify_dataframe(input_df, knowledge_base)
     export_reports(classified_df, output_dir)
