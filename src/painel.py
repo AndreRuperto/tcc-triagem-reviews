@@ -26,6 +26,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.classificador import normalize_text, stem_phrase
+from src.estilo import TOKENS_CLARO, TOKENS_ESCURO
 
 CATEGORIAS = ["Tecnico", "Afetivo-visual", "Misto", "Indefinido"]
 LIMITE_TEXTO = 6000
@@ -245,17 +246,6 @@ def _json_seguro(dados: dict) -> str:
     return json.dumps(dados, ensure_ascii=False).replace("</", "<\\/")
 
 
-# Cores dos dois temas. Ficam aqui (e nao soltas no CSS) porque cada tema e
-# usado em mais de um lugar: tema do sistema, tema escolhido no painel e a
-# impressao, que sempre sai no tema claro.
-TOKENS_CLARO = """--fundo: #eef3f7; --papel: #ffffff; --tinta: #14212b; --tinta-suave: #4b5b67; --linha: #d3dde5;
-  --tec: #0b6f78; --tec-marca: #a6eef2; --afe: #a3205f; --afe-marca: #ffc9e2;
-  --ind: #77838d; --foco: #1b5fd6; --sim: #256341; --nao: #f4ae8f; color-scheme: light;"""
-TOKENS_ESCURO = """--fundo: #0e1920; --papel: #15232c; --tinta: #e4edf2; --tinta-suave: #a2b3bf; --linha: #2b3c48;
-  --tec: #5fd3db; --tec-marca: #1d5a60; --afe: #ff86bf; --afe-marca: #6a2348;
-  --ind: #7f909c; --foco: #8ab4ff; --sim: #86e0ac; --nao: #a8482a; color-scheme: dark;"""
-
-
 def _string_css(texto: str) -> str:
     """Texto como string CSS entre aspas (para o cabecalho das paginas impressas)."""
     return '"' + texto.replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ") + '"'
@@ -419,6 +409,20 @@ th[aria-sort] .ordenar { color: var(--tinta); }
 .ind-lista .enchimento { height: 100%; }
 .vazio { color: var(--tinta-suave); background: var(--papel); border: 1px dashed var(--linha); border-radius: var(--r-medio); padding: var(--e4); }
 .vazio code { font-size: .9em; }
+.vazio ol { margin: var(--e3) 0 0; padding-left: 1.4em; display: grid; gap: var(--e3); }
+.comando { display: flex; flex-wrap: wrap; gap: var(--e2); align-items: center; margin-top: var(--e1); }
+.comando code { font: .85rem/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--tinta); background: var(--fundo);
+  border: 1px solid var(--linha); border-radius: var(--r-pequeno); padding: var(--e2) var(--e3); overflow-wrap: anywhere; }
+.comando button { font: inherit; font-size: .85rem; color: var(--tinta); background: var(--papel); border: 1px solid var(--linha);
+  border-radius: 999px; padding: var(--e1) var(--e3); min-height: 44px; min-width: 88px; cursor: pointer; }
+
+/* índice da página */
+.indice { margin-top: var(--e5); }
+.indice ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--e1) var(--e2); }
+.indice a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--e3); border-radius: 999px;
+  color: var(--tinta); text-decoration: none; border: 1px solid var(--linha); background: var(--papel); font-size: .9rem; }
+.indice a:hover { border-color: var(--tinta-suave); }
+section { scroll-margin-top: var(--e4); }
 
 /* avaliacao */
 .placar { display: flex; flex-wrap: wrap; gap: var(--e6); margin-bottom: var(--e5); }
@@ -499,7 +503,7 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
   body { background: #fff; }
   main, html.apresentacao main { max-width: none; padding: 0; }
   section { margin-top: var(--e6); }
-  .ferramentas, .filtros, .cats, .mais, .ler, .troca, #limpar-periodo, #limpar-celula, .so-tela, #estado { display: none !important; }
+  .ferramentas, .filtros, .cats, .mais, .ler, .troca, #limpar-periodo, #limpar-celula, .so-tela, #estado, .indice, .comando button { display: none !important; }
   h2 { break-after: avoid; }
   /* seções curtas ficam inteiras numa página; só a lista de reviews se divide */
   main > section:not([aria-labelledby="t-rev"]) { break-inside: avoid; }
@@ -528,9 +532,20 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     <h1 id="titulo"></h1>
     <p class="achado" id="achado"></p>
     <p class="contexto" id="resumo"></p>
+    <nav class="indice" aria-label="Nesta página">
+      <ul>
+        <li><a href="#sec-geral">Visão geral</a></li>
+        <li><a href="#sec-tempo">Ao longo do tempo</a></li>
+        <li><a href="#sec-jogos">Por jogo</a></li>
+        <li><a href="#sec-rec">Recomendação</a></li>
+        <li><a href="#sec-ind">Indicadores</a></li>
+        <li><a href="#sec-aval">Gabarito</a></li>
+        <li><a href="#sec-rev">Reviews</a></li>
+      </ul>
+    </nav>
   </header>
 
-  <section aria-labelledby="t-geral">
+  <section aria-labelledby="t-geral" id="sec-geral">
     <h2 id="t-geral">Como os reviews se dividem</h2>
     <div class="barra grande" id="barra-geral" role="img"></div>
     <div id="zoom"></div>
@@ -549,7 +564,7 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
       depende de como a coleta foi feita (por exemplo, coletar as mais recentes enche os últimos meses).</p>
   </section>
 
-  <section aria-labelledby="t-jogos">
+  <section aria-labelledby="t-jogos" id="sec-jogos">
     <h2 id="t-jogos">Por jogo</h2>
     <p class="sub instrucao" style="margin-bottom: var(--e3)">Clique no nome de um jogo para filtrar a linha do tempo e a lista de reviews. Clique no título de uma coluna para ordenar.</p>
     <div class="rolagem"><table class="tab-jogos" id="tab-jogos"></table></div>
@@ -562,17 +577,17 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     <div class="chave"><span class="k-sim">Recomenda</span><span class="k-nao">Não recomenda</span></div>
   </section>
 
-  <section aria-labelledby="t-ind">
+  <section aria-labelledby="t-ind" id="sec-ind">
     <h2 id="t-ind">Indicadores mais acionados</h2>
     <div class="duas" id="indicadores"></div>
   </section>
 
-  <section aria-labelledby="t-aval">
+  <section aria-labelledby="t-aval" id="sec-aval">
     <h2 id="t-aval">Sistema comparado ao gabarito manual</h2>
     <div id="avaliacao"></div>
   </section>
 
-  <section aria-labelledby="t-rev">
+  <section aria-labelledby="t-rev" id="sec-rev">
     <h2 id="t-rev">Reviews e o porquê de cada classificação</h2>
     <p class="so-impressao" id="nota-impressao"></p>
     <p class="sub" style="margin-bottom: var(--e4)">Os indicadores encontrados aparecem marcados no texto:
@@ -980,11 +995,27 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
 
   // avaliação
   var av = D.avaliacao, avBox = document.getElementById("avaliacao"), botoesCelula = [];
+  function comando(texto) {   // bloco de comando com botão de copiar
+    var cod = el("code", { texto: texto });
+    var bt = el("button", { type: "button", texto: "Copiar", "aria-label": "Copiar o comando " + texto });
+    bt.addEventListener("click", function () {
+      var feito = function () { bt.textContent = "Copiado"; setTimeout(function () { bt.textContent = "Copiar"; }, 2000); };
+      var selecionar = function () {   // sem acesso à área de transferência (ex.: arquivo local): deixa o texto selecionado
+        var r = document.createRange(); r.selectNodeContents(cod);
+        var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); bt.textContent = "Selecionado: Ctrl+C";
+      };
+      try { navigator.clipboard.writeText(texto).then(feito, selecionar); } catch (e) { selecionar(); }
+    });
+    return el("div", { classe: "comando" }, [cod, bt]);
+  }
   if (!av) {
     avBox.appendChild(el("div", { classe: "vazio" }, [
       el("p", { texto: "Ainda não há gabarito manual, então não dá para medir acertos e erros do sistema." }),
-      el("p", { style: "margin-top:var(--e2)" }, ["Para gerar: rotule a amostra de ", el("code", { texto: "python -m src.amostragem" }),
-        " e rode ", el("code", { texto: "python -m src.avaliacao --gabarito data/gabarito_rotulado.csv" }), ". Este painel é refeito com a matriz de confusão."])
+      el("ol", {}, [
+        el("li", {}, ["Gere a amostra cega e preencha a coluna categoria_manual:", comando("python -m src.amostragem --tamanho 200")]),
+        el("li", {}, ["Salve como data/gabarito_rotulado.csv e avalie:", comando("python -m src.avaliacao --gabarito data/gabarito_rotulado.csv")])
+      ]),
+      el("p", { style: "margin-top:var(--e3)", texto: "Este painel é refeito com a matriz de confusão." })
     ]));
   } else {
     var placar = el("div", { classe: "placar" });
@@ -1173,6 +1204,54 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     document.getElementById("nota-impressao").textContent = "Lista impressa: " + nReviews(filtrados.length) +
       (filtros.length ? " (" + filtros.join("; ") + ")" : ", sem filtros") + ", " + ORDENS[selOrdem.value].rotulo + ".";
   }
+  // filtro guardado na URL (#jogo=...&cat=...): dá para compartilhar um recorte
+  var semMovimento = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function lerDaUrl() {
+    var h = location.hash.slice(1);
+    if (h.indexOf("=") < 0) return;
+    var p = new URLSearchParams(h);
+    if (p.get("jogo") && D.por_jogo[p.get("jogo")]) { estado.jogo = p.get("jogo"); selJogo.value = estado.jogo; }
+    if (p.get("cat") && D.categorias.indexOf(p.get("cat")) >= 0) estado.cat = p.get("cat");
+    var bal = BALDES.filter(function (b) { return b.ini === p.get("periodo"); })[0];
+    if (bal) estado.periodo = { ini: bal.ini, fim: bal.fim, rotulo: bal.longo };
+    if (p.get("busca")) { estado.busca = p.get("busca").toLowerCase(); busca.value = p.get("busca"); }
+    if (p.get("ordem") && selOrdem.querySelector('option[value="' + p.get("ordem").replace(/[^a-z]/g, "") + '"]')) { selOrdem.value = p.get("ordem"); ordenar(); }
+    if (p.get("so") === "1") { estado.soIndicador = true; document.getElementById("so-indicador").checked = true; }
+    var cel = (p.get("celula") || "").split("|");
+    if (D.clicavel && cel.length === 2 && D.categorias.indexOf(cel[0]) >= 0 && D.categorias.indexOf(cel[1]) >= 0) estado.celula = { man: cel[0], sis: cel[1] };
+  }
+  function salvarNaUrl() {
+    var p = new URLSearchParams();
+    if (estado.jogo) p.set("jogo", estado.jogo);
+    if (estado.cat) p.set("cat", estado.cat);
+    if (estado.periodo) p.set("periodo", estado.periodo.ini);
+    if (estado.busca) p.set("busca", estado.busca);
+    if (selOrdem.value !== "indicadores") p.set("ordem", selOrdem.value);
+    if (estado.soIndicador) p.set("so", "1");
+    if (estado.celula) p.set("celula", estado.celula.man + "|" + estado.celula.sis);
+    var novo = p.toString();
+    try { history.replaceState(null, "", novo ? "#" + novo : location.pathname + location.search); } catch (e) {}
+  }
+  var renderBase = render;
+  render = function () { renderBase(); salvarNaUrl(); };
+  document.getElementById("so-indicador").addEventListener("change", salvarNaUrl);
+  // os links do índice rolam até a seção sem trocar o endereço (que guarda o filtro)
+  [].slice.call(document.querySelectorAll(".indice a")).forEach(function (a) {
+    a.addEventListener("click", function (ev) {
+      var alvo = document.getElementById(a.getAttribute("href").slice(1));
+      if (!alvo || alvo.hidden) return;
+      ev.preventDefault();
+      alvo.scrollIntoView({ behavior: semMovimento ? "auto" : "smooth" });
+      var titulo = alvo.querySelector("h2");
+      if (titulo) { titulo.setAttribute("tabindex", "-1"); titulo.focus({ preventScroll: true }); }
+    });
+  });
+  // seções escondidas (sem dados) somem do índice
+  [].slice.call(document.querySelectorAll(".indice li")).forEach(function (li) {
+    var alvo = document.getElementById(li.firstChild.getAttribute("href").slice(1));
+    if (!alvo || alvo.hidden) li.hidden = true;
+  });
+  lerDaUrl();
   render();
 
   // barra de ferramentas: modo apresentação, tema e impressão

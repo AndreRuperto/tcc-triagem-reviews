@@ -14,7 +14,10 @@ o painel, ordenação escolhível, horas e votos da Steam no cartão,
 matriz de confusão clicável com % por linha). Fase 4 implementada em
 12/11/2026 (modo apresentação com atalho P, seletor de tema lembrado no
 navegador, impressão/PDF com cabeçalho e número de página, seções
-inteiras por página e nota dos filtros). Fase 5 pendente.
+inteiras por página e nota dos filtros). Fase 5 implementada em
+12/11/2026 (página inicial do servidor com o estilo e o resumo de cada
+painel, índice no topo, filtro guardado na URL, estado vazio da
+avaliação com comandos copiáveis). **Plano concluído.**
 
 ## Para que serve a tela
 
@@ -117,7 +120,7 @@ inteiras por página e nota dos filtros). Fase 5 pendente.
   impressora P&B (rótulos escritos, que já existem), lista limitada aos
   reviews filtrados.
 
-### Fase 5: acabamento
+### Fase 5: acabamento (feita)
 - **5.1 Página inicial do servidor** com os mesmos tokens do painel e,
   para cada painel, o total de reviews e a data de geração.
 - **5.2 Âncoras e índice:** links no topo para cada seção; a URL guarda

@@ -76,6 +76,10 @@ Na barra do topo do painel:
   inteira com os filtros escolhidos na tela (filtre antes para um anexo
   menor: sem filtro são cerca de 100 páginas para 399 reviews).
 
+O filtro escolhido (jogo, categoria, período, busca, ordenação) fica
+no endereço da página: copie o link para mostrar exatamente aquele
+recorte para alguém.
+
 ### Abrir numa porta local
 Pelo Docker (fica rodando em segundo plano):
 
@@ -86,7 +90,8 @@ Sem Docker, com Python:
 
     python -m src.servidor           # http://localhost:8090 (Ctrl+C para parar)
 
-A página inicial lista os painéis de `reports/`. O servidor desliga o
+A página inicial lista os painéis de `reports/`, com o total de
+reviews, o período e a data de geração de cada um. O servidor desliga o
 cache do navegador, então basta recarregar a página depois de uma nova
 classificação. Para usar outra porta: `PAINEL_PORTA=9000 docker compose
 up -d painel` ou `python -m src.servidor --porta 9000`.

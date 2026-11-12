@@ -136,6 +136,13 @@ class TestGerarPainel(unittest.TestCase):
         self.assertIn('@top-left { content: "Título com \\"aspas\\", base de conhecimento v1.1', html)
         self.assertIn('id="b-apresentacao"', html)
 
+    def test_indice_aponta_para_secoes_que_existem(self):
+        html = painel.montar_html(painel.montar_dados(self.classificados()))
+        alvos = re.findall(r'<a href="#(sec-[a-z]+)">', html)
+        self.assertEqual(len(alvos), 7)
+        for alvo in alvos:
+            self.assertIn(f'id="{alvo}"', html)
+
     def test_marcador_dentro_de_um_review_nao_e_substituido(self):
         df = self.classificados()
         df.loc[0, "texto_original"] = "texto com __TOKENS_CLARO__ dentro"
