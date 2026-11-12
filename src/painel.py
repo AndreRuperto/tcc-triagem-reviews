@@ -30,6 +30,9 @@ from src.classificador import normalize_text, stem_phrase
 CATEGORIAS = ["Tecnico", "Afetivo-visual", "Misto", "Indefinido"]
 LIMITE_TEXTO = 6000
 MARCA_RADICAL = " (via radical)"
+TITULO = "Triagem de reviews de jogos digitais com IA simbólica"
+NOMES_IDIOMA = {"brazilian": "português (Brasil)", "portuguese": "português (Portugal)",
+                "english": "inglês", "spanish": "espanhol", "latam": "espanhol (América Latina)"}
 
 
 def _normalizar_char(c: str) -> str:
@@ -121,17 +124,41 @@ def montar_dados(classificados: pd.DataFrame, avaliacao: dict = None) -> dict:
         return sorted(contagem_ind[grupo].items(), key=lambda kv: (-kv[1], kv[0]))[:12]
 
     versoes = sorted({str(v) for v in classificados.get("versao_base", pd.Series(dtype=str)).dropna()})
+    geral = {cat: int((classificados["categoria"] == cat).sum()) for cat in CATEGORIAS}
     return {
+        "titulo": TITULO,
         "gerado": datetime.now().strftime("%d/%m/%Y %H:%M"),
         "versao_base": ", ".join(versoes),
+        "com_indicador": len(classificados) - geral["Indefinido"],
+        "periodo": periodo_das_reviews(classificados),
+        "idiomas": idiomas_das_reviews(classificados),
+        "fonte": "Steam" if "votos_util" in classificados.columns else "",
         "total": len(classificados),
         "categorias": CATEGORIAS,
-        "geral": {cat: int((classificados["categoria"] == cat).sum()) for cat in CATEGORIAS},
+        "geral": geral,
         "por_jogo": por_jogo,
         "indicadores": {"t": top("t"), "a": top("a")},
         "avaliacao": avaliacao,
         "reviews": reviews,
     }
+
+
+def periodo_das_reviews(classificados: pd.DataFrame) -> list:
+    """[primeira, ultima] data_criacao (AAAA-MM-DD), ou None se a coluna nao existir/estiver vazia."""
+    if "data_criacao" not in classificados.columns:
+        return None
+    datas = pd.to_datetime(classificados["data_criacao"], format="%Y-%m-%d", errors="coerce").dropna()
+    if datas.empty:
+        return None
+    return [datas.min().strftime("%Y-%m-%d"), datas.max().strftime("%Y-%m-%d")]
+
+
+def idiomas_das_reviews(classificados: pd.DataFrame) -> list:
+    """Idiomas das reviews com nome legivel (a Steam usa 'brazilian' para pt-BR)."""
+    if "idioma" not in classificados.columns:
+        return []
+    codigos = sorted({str(i) for i in classificados["idioma"].dropna() if str(i).strip()})
+    return [NOMES_IDIOMA.get(c, c) for c in codigos]
 
 
 def ler_avaliacao(pasta: Path) -> dict:
@@ -224,7 +251,17 @@ section { margin-top: var(--e7); }
 .f-Afetivo-visual { background: var(--afe); }
 .f-Misto { background: repeating-linear-gradient(135deg, var(--tec) 0 7px, var(--afe) 7px 14px); }
 .f-Indefinido { background: var(--ind); }
-.legenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--e4); margin-top: var(--e4); }
+/* achado em uma frase */
+.achado { font: 600 1.5rem/1.4 var(--sans); max-width: 40ch; margin: var(--e5) 0 var(--e3); letter-spacing: -0.005em; }
+.achado mark { padding: 0 .15em; }
+.contexto { color: var(--tinta-suave); max-width: 75ch; }
+
+/* funil: a fatia com indicador ampliada na segunda barra */
+.funil { display: block; width: 100%; height: 36px; }
+.funil polygon { fill: var(--linha); opacity: .7; }
+.zoom-titulo { font-size: .95rem; color: var(--tinta-suave); margin-bottom: var(--e2); }
+.zoom-titulo b { color: var(--tinta); }
+.legenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: var(--e4); margin-top: var(--e4); }
 .legenda div { display: grid; grid-template-columns: 14px 1fr; column-gap: var(--e2); }
 .legenda .cor { width: 14px; height: 14px; border-radius: 3px; margin-top: 4px; }
 .legenda b { font-weight: 650; }
@@ -242,7 +279,7 @@ section { margin-top: var(--e7); }
 .jogo .conta { color: var(--tinta-suave); font-size: .9rem; }
 
 /* indicadores */
-.duas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--e6); }
+.duas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: var(--e6); }
 .ind-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e2); }
 .ind-lista li { display: grid; grid-template-columns: minmax(120px, 42%) 1fr 3ch; gap: var(--e3); align-items: center; }
 .ind-lista .trilho { height: 10px; background: var(--linha); border-radius: 5px; overflow: hidden; }
@@ -285,6 +322,9 @@ input[type=search] { min-width: min(320px, 100%); }
 mark { color: inherit; padding: 0 .12em; border-radius: 2px; }
 mark.t { background: linear-gradient(transparent 30%, var(--tec-marca) 30%); box-shadow: inset 0 -2px 0 var(--tec); }
 mark.a { background: linear-gradient(transparent 30%, var(--afe-marca) 30%); box-shadow: inset 0 -2px 0 var(--afe); }
+mark.m { background: linear-gradient(transparent 30%, var(--tec-marca) 30%, var(--tec-marca) 65%, var(--afe-marca) 65%);
+  box-shadow: inset 0 -2px 0 var(--afe); }
+mark.i { background: linear-gradient(transparent 30%, var(--linha) 30%); box-shadow: inset 0 -2px 0 var(--ind); }
 mark.radical { box-shadow: none; text-decoration: underline dotted 2px; text-underline-offset: 4px; }
 .reticencias { color: var(--tinta-suave); }
 .ler { font: inherit; font-size: .9rem; color: var(--foco); background: none; border: 0; padding: var(--e2) 0; min-height: 44px; cursor: pointer; text-decoration: underline; }
@@ -295,6 +335,7 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
 
 @media (max-width: 640px) {
   h1 { font-size: 1.6rem; }
+  .achado { font-size: 1.25rem; }
   .jogo { grid-template-columns: 1fr; gap: var(--e2); }
   .review { padding: var(--e3) var(--e4); }
 }
@@ -307,13 +348,15 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
 <body>
 <main>
   <header>
-    <h1>Triagem de reviews</h1>
-    <p class="sub" id="resumo"></p>
+    <h1 id="titulo"></h1>
+    <p class="achado" id="achado"></p>
+    <p class="contexto" id="resumo"></p>
   </header>
 
   <section aria-labelledby="t-geral">
     <h2 id="t-geral">Como os reviews se dividem</h2>
     <div class="barra grande" id="barra-geral" role="img"></div>
+    <div id="zoom"></div>
     <div class="legenda" id="legenda"></div>
   </section>
 
@@ -388,20 +431,84 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     return partes;
   }
 
-  // cabeçalho
-  var nJogos = Object.keys(D.por_jogo).length;
-  document.getElementById("resumo").textContent =
-    fmt.format(D.total) + " reviews de " + nJogos + (nJogos === 1 ? " jogo" : " jogos") +
-    ", classificados pelo sistema especialista" + (D.versao_base ? " com a base de conhecimento v" + D.versao_base : "") +
-    ". Painel gerado em " + D.gerado + ".";
+  // cabeçalho: título, o achado em uma frase e o contexto da coleta
+  var MARCA = { "Tecnico": "t", "Afetivo-visual": "a", "Misto": "m", "Indefinido": "i" };
+  var SINGULAR = { "Tecnico": "técnico", "Afetivo-visual": "afetivo-visual", "Misto": "misto" };
+  var PLURAL = { "Tecnico": "técnicos", "Afetivo-visual": "afetivo-visuais", "Misto": "mistos" };
+  var dataBr = function (iso) { return iso.split("-").reverse().join("/"); };
+  var lista_e = function (itens) {   // ["a","b","c"] -> a, b e c (como nós DOM)
+    var out = [];
+    itens.forEach(function (it, i) { if (i) out.push(i === itens.length - 1 ? " e " : ", "); out.push(it); });
+    return out;
+  };
+  document.getElementById("titulo").textContent = D.titulo;
+  document.title = D.titulo;
 
-  // visão geral
+  var achado = document.getElementById("achado");
+  if (!D.total) {
+    achado.textContent = "Nenhum review para mostrar.";
+  } else if (!D.com_indicador) {
+    achado.appendChild(document.createTextNode("Nenhum dos " + fmt.format(D.total) + " reviews tem indicador da base de conhecimento: todos ficaram "));
+    achado.appendChild(el("mark", { classe: "i", texto: "indefinidos" }));
+    achado.appendChild(document.createTextNode("."));
+  } else {
+    var partes = [];
+    ["Tecnico", "Afetivo-visual", "Misto"].forEach(function (c) {
+      var n = D.geral[c];
+      if (!n) return;
+      partes.push(el("span", {}, [fmt.format(n) + " ", el("mark", { classe: MARCA[c], texto: n === 1 ? SINGULAR[c] : PLURAL[c] })]));
+    });
+    var filhos = ["De " + fmt.format(D.total) + " reviews, " + fmt.format(D.com_indicador) + " (" + pct(D.com_indicador, D.total) + ") " +
+      (D.com_indicador === 1 ? "tem" : "têm") + " algum indicador da base: "].concat(lista_e(partes)).concat(["."]);
+    filhos.forEach(function (f) { achado.appendChild(typeof f === "string" ? document.createTextNode(f) : f); });
+    var resto = D.geral["Indefinido"];
+    if (resto) {
+      achado.appendChild(document.createTextNode(" Os outros " + fmt.format(resto) + " ficaram "));
+      achado.appendChild(el("mark", { classe: "i", texto: "indefinidos" }));
+      achado.appendChild(document.createTextNode("."));
+    }
+  }
+
+  var nJogos = Object.keys(D.por_jogo).length;
+  var ctx = "Reviews" + (D.idiomas.length ? " em " + D.idiomas.join(", ") : "") + (D.fonte ? " da " + D.fonte : "") +
+    " de " + nJogos + (nJogos === 1 ? " jogo" : " jogos") +
+    (D.periodo ? (D.periodo[0] === D.periodo[1] ? ", escritos em " + dataBr(D.periodo[0]) : ", escritos entre " + dataBr(D.periodo[0]) + " e " + dataBr(D.periodo[1])) : "") +
+    ". Classificados pelo sistema especialista" + (D.versao_base ? " com a base de conhecimento v" + D.versao_base : "") +
+    ". Painel gerado em " + D.gerado + ".";
+  document.getElementById("resumo").textContent = ctx;
+
+  // visão geral + ampliação dos que têm indicador
   barra(D.geral, D.total, document.getElementById("barra-geral"));
+  var zoom = document.getElementById("zoom");
+  if (D.com_indicador && D.geral["Indefinido"]) {
+    var SVG = "http://www.w3.org/2000/svg";
+    var fun = document.createElementNS(SVG, "svg");
+    fun.setAttribute("class", "funil"); fun.setAttribute("viewBox", "0 0 100 36");
+    fun.setAttribute("preserveAspectRatio", "none"); fun.setAttribute("aria-hidden", "true");
+    var poli = document.createElementNS(SVG, "polygon");
+    var fr = (100 * D.com_indicador / D.total).toFixed(3);
+    poli.setAttribute("points", "0,0 " + fr + ",0 100,36 0,36");
+    fun.appendChild(poli);
+    zoom.appendChild(fun);
+    var so = {}; D.categorias.forEach(function (c) { so[c] = c === "Indefinido" ? 0 : D.geral[c]; });
+    var b2 = el("div", { classe: "barra grande" });
+    var partes2 = barra(so, D.com_indicador, b2);
+    b2.setAttribute("role", "img");
+    b2.setAttribute("aria-label", "Entre os " + D.com_indicador + " reviews com indicador: " + partes2.join(", "));
+    zoom.appendChild(b2);
+    zoom.appendChild(el("p", { classe: "zoom-titulo", style: "margin-top:var(--e2)" }, [
+      "Ampliação dos ", el("b", { classe: "num", texto: fmt.format(D.com_indicador) + " reviews com algum indicador" }),
+      " (a parte colorida da barra de cima)."
+    ]));
+  }
   var leg = document.getElementById("legenda");
   D.categorias.forEach(function (c) {
+    var n = D.geral[c];
+    var detalhe = fmt.format(n) + " (" + pct(n, D.total) + " do total" +
+      (c !== "Indefinido" && D.com_indicador ? ", " + pct(n, D.com_indicador) + " dos com indicador" : "") + ")";
     leg.appendChild(el("div", {}, [
       el("span", { classe: "cor f-" + c, "aria-hidden": "true" }),
-      el("span", {}, [el("b", { texto: NOMES[c] }), " ", el("span", { classe: "num", texto: fmt.format(D.geral[c]) + " (" + pct(D.geral[c], D.total) + ")" })]),
+      el("span", {}, [el("b", { texto: NOMES[c] }), " ", el("span", { classe: "num", texto: detalhe })]),
       el("span", { classe: "desc", texto: DESC[c] })
     ]));
   });

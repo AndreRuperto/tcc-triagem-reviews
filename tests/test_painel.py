@@ -58,6 +58,24 @@ class TestGerarPainel(unittest.TestCase):
         r2 = [r for r in dados["reviews"] if r["id"] == "2"][0]
         self.assertEqual(r2["texto"][r2["marcas"][0][0]:r2["marcas"][0][1]], "rosto feio")
 
+    def test_achado_e_contexto_da_coleta(self):
+        df = self.classificados()
+        df["categoria"] = ["Tecnico", "Indefinido"]
+        df["data_criacao"] = ["2025-02-16", "2025-01-30"]
+        df["idioma"] = ["brazilian", "brazilian"]
+        df["votos_util"] = [0, 3]
+        dados = painel.montar_dados(df)
+        self.assertEqual(dados["com_indicador"], 1)
+        self.assertEqual(dados["periodo"], ["2025-01-30", "2025-02-16"])
+        self.assertEqual(dados["idiomas"], ["português (Brasil)"])
+        self.assertEqual(dados["fonte"], "Steam")
+        self.assertEqual(dados["titulo"], painel.TITULO)
+
+    def test_sem_colunas_da_steam_o_contexto_fica_vazio(self):
+        dados = painel.montar_dados(self.classificados())
+        self.assertEqual((dados["periodo"], dados["idiomas"], dados["fonte"]), (None, [], ""))
+        self.assertEqual(dados["com_indicador"], 2)
+
     def test_inclui_a_avaliacao_quando_existe(self):
         with tempfile.TemporaryDirectory() as pasta:
             pasta = Path(pasta)

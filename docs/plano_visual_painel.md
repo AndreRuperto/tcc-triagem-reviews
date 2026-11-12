@@ -2,7 +2,11 @@
 
 Escrito em 12/11/2026, a partir das telas atuais de
 `reports/steam/painel.html` (399 reviews, 4 jogos) no tema claro, no
-escuro e em 375 px. Nada deste plano foi implementado ainda.
+escuro e em 375 px.
+
+**Andamento:** fase 1 implementada em 12/11/2026 (frase-achado, segunda
+barra ampliada ligada por um funil à barra geral, título do TCC e
+contexto da coleta). Fases 2 a 5 pendentes.
 
 ## Para que serve a tela
 
@@ -47,7 +51,7 @@ escuro e em 375 px. Nada deste plano foi implementado ainda.
 
 ## O que fazer, em ordem de impacto
 
-### Fase 1: a mensagem em 5 segundos
+### Fase 1: a mensagem em 5 segundos (feita)
 - **1.1 Frase-achado no topo.** Gerada dos dados em `montar_dados`:
   "De 399 reviews, 49 (12,3%) têm algum indicador: 47 técnicos,
   1 afetivo-visual e 1 misto." Em texto grande, com os nomes das
