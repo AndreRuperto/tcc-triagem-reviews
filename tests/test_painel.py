@@ -76,6 +76,34 @@ class TestGerarPainel(unittest.TestCase):
         self.assertEqual((dados["periodo"], dados["idiomas"], dados["fonte"]), (None, [], ""))
         self.assertEqual(dados["com_indicador"], 2)
 
+    def test_recomendacao_por_categoria_e_por_jogo(self):
+        df = self.classificados()
+        df["recomendado"] = ["sim", "nao"]
+        dados = painel.montar_dados(df)
+        self.assertEqual(dados["recomendacao"]["Tecnico"], {"sim": 1, "nao": 0})
+        self.assertEqual(dados["recomendacao"]["Afetivo-visual"], {"sim": 0, "nao": 1})
+        self.assertEqual(dados["rec_por_jogo"], {"J1": [1, 1], "J2": [0, 1]})
+
+    def test_sem_recomendacao_nao_ha_secao(self):
+        df = self.classificados().drop(columns=["recomendado"])
+        dados = painel.montar_dados(df)
+        self.assertIsNone(dados["recomendacao"])
+        self.assertEqual(dados["rec_por_jogo"], {})
+
+    def test_celula_vazia_nao_vira_nan(self):
+        df = self.classificados()
+        df["recomendado"] = [float("nan"), "sim"]
+        df["data_criacao"] = [float("nan"), "2025-02-01"]
+        r1 = [r for r in painel.montar_dados(df)["reviews"] if r["id"] == "1"][0]
+        self.assertEqual((r1["rec"], r1["data"]), ("", ""))
+
+    def test_lista_completa_de_indicadores_ordenada(self):
+        df = pd.concat([self.classificados()] * 3, ignore_index=True)
+        df["id_review"] = [str(i) for i in range(len(df))]
+        df.loc[0, "indicadores_tecnicos"] = "travando; bug (via radical)"
+        ind = painel.montar_dados(df)["indicadores"]["t"]
+        self.assertEqual([list(par) for par in ind], [["travando", 3], ["bug", 1]])
+
     def test_inclui_a_avaliacao_quando_existe(self):
         with tempfile.TemporaryDirectory() as pasta:
             pasta = Path(pasta)

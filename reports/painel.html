@@ -8,7 +8,7 @@
 :root {
   --fundo: #eef3f7; --papel: #ffffff; --tinta: #14212b; --tinta-suave: #4b5b67; --linha: #d3dde5;
   --tec: #0b6f78; --tec-marca: #a6eef2; --afe: #a3205f; --afe-marca: #ffc9e2;
-  --ind: #77838d; --foco: #1b5fd6;
+  --ind: #77838d; --foco: #1b5fd6; --sim: #256341; --nao: #f4ae8f;
   --serifa: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --sans: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --r-pequeno: 4px; --r-medio: 10px;
@@ -18,7 +18,7 @@
   :root {
     --fundo: #0e1920; --papel: #15232c; --tinta: #e4edf2; --tinta-suave: #a2b3bf; --linha: #2b3c48;
     --tec: #5fd3db; --tec-marca: #1d5a60; --afe: #ff86bf; --afe-marca: #6a2348;
-    --ind: #7f909c; --foco: #8ab4ff;
+    --ind: #7f909c; --foco: #8ab4ff; --sim: #86e0ac; --nao: #a8482a;
   }
 }
 * { box-sizing: border-box; }
@@ -56,16 +56,55 @@ section { margin-top: var(--e7); }
 .legenda b { font-weight: 650; }
 .legenda span.desc { grid-column: 2; color: var(--tinta-suave); font-size: .9rem; }
 
+/* ao longo do tempo */
+.tempo-topo { display: flex; flex-wrap: wrap; gap: var(--e3) var(--e5); align-items: center; justify-content: space-between; margin-bottom: var(--e3); }
+.troca { display: inline-flex; gap: var(--e2); align-items: center; min-height: 44px; cursor: pointer; }
+.troca input { width: 20px; height: 20px; accent-color: var(--tinta); }
+#tempo svg { display: block; width: 100%; height: 240px; overflow: visible; }
+#tempo .eixo text { fill: var(--tinta-suave); font: 12px var(--sans); font-variant-numeric: tabular-nums; }
+#tempo .eixo line { stroke: var(--linha); }
+#tempo .col { cursor: pointer; outline: none; }
+#tempo .col .alvo { fill: transparent; }
+#tempo .col:hover .alvo, #tempo .col:focus-visible .alvo { fill: var(--linha); opacity: .45; }
+#tempo .col:focus-visible .alvo { stroke: var(--foco); stroke-width: 3px; opacity: 1; fill-opacity: .25; }
+#tempo.escolhido .col:not([aria-pressed="true"]) rect:not(.alvo) { opacity: .3; }
+.s-Tecnico { fill: var(--tec); } .s-Afetivo-visual { fill: var(--afe); } .s-Indefinido { fill: var(--ind); }
+.s-Misto { fill: url(#hachura); }
+#hachura .h1 { fill: var(--tec); } #hachura .h2 { fill: var(--afe); }
+
 /* por jogo */
-.jogos { display: grid; gap: var(--e2); }
-.jogo { display: grid; grid-template-columns: 220px 1fr 300px; gap: var(--e4); align-items: center;
-  width: 100%; padding: var(--e3) var(--e3); border: 1px solid transparent; border-radius: var(--r-medio);
-  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; min-height: 44px; }
-.jogo:hover { border-color: var(--linha); background: var(--papel); }
-.jogo[aria-pressed="true"] { border-color: var(--tinta-suave); background: var(--papel); }
-.jogo .nome { font-weight: 600; }
-.jogo .nome small { display: block; color: var(--tinta-suave); font-weight: 400; }
-.jogo .conta { color: var(--tinta-suave); font-size: .9rem; }
+.tab-jogos { width: 100%; min-width: 720px; }
+.tab-jogos th, .tab-jogos td { vertical-align: middle; }
+.tab-jogos thead th { padding: 0; }
+.ordenar { font: inherit; font-size: .9rem; font-weight: 600; color: var(--tinta-suave); background: none; border: 0; cursor: pointer;
+  width: 100%; min-height: 44px; padding: var(--e2) var(--e3); text-align: inherit; }
+.ordenar::after { content: ""; display: inline-block; width: 1em; }
+th[aria-sort="descending"] .ordenar::after { content: " \2193"; }
+th[aria-sort="ascending"] .ordenar::after { content: " \2191"; }
+th[aria-sort] .ordenar { color: var(--tinta); }
+.jogo-btn { font: inherit; font-weight: 600; color: var(--tinta); background: none; border: 1px solid transparent; border-radius: var(--r-pequeno);
+  padding: var(--e2); margin-left: calc(-1 * var(--e2)); min-height: 44px; cursor: pointer; text-align: left; }
+.jogo-btn:hover { border-color: var(--linha); }
+.jogo-btn[aria-pressed="true"] { border-color: var(--tinta-suave); background: var(--papel); }
+.celula { display: grid; gap: 4px; justify-items: end; }
+.celula small { color: var(--tinta-suave); font-size: .8rem; }
+.mini { width: 72px; height: 6px; background: var(--linha); border-radius: 3px; overflow: hidden; }
+.mini span { display: block; height: 100%; }
+
+/* recomendação */
+.rec-lista { display: grid; gap: var(--e3); }
+.rec-linha { display: grid; grid-template-columns: minmax(130px, 200px) 1fr minmax(150px, auto); gap: var(--e4); align-items: center; }
+.rec-linha .barra { height: 22px; box-shadow: 0 0 0 1px var(--tinta-suave); }
+.r-sim { background: var(--sim); } .r-nao { background: var(--nao); }
+.rec-linha .conta { color: var(--tinta-suave); font-size: .9rem; }
+.chave { display: flex; flex-wrap: wrap; gap: var(--e4); margin-top: var(--e3); color: var(--tinta-suave); font-size: .9rem; }
+.chave span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.chave .k-sim::before { background: var(--sim); } .chave .k-nao::before { background: var(--nao); }
+
+/* filtro de período na lista */
+.chip { display: inline-flex; flex-wrap: wrap; gap: var(--e2); align-items: center; margin-top: var(--e3); }
+.chip[hidden] { display: none; }
+.chip b { font-weight: 600; }
 
 /* indicadores */
 .duas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: var(--e6); }
@@ -125,7 +164,7 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
 @media (max-width: 640px) {
   h1 { font-size: 1.6rem; }
   .achado { font-size: 1.25rem; }
-  .jogo { grid-template-columns: 1fr; gap: var(--e2); }
+  .rec-linha { grid-template-columns: 1fr; gap: var(--e1); }
   .review { padding: var(--e3) var(--e4); }
 }
 @media print {
@@ -149,10 +188,29 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     <div class="legenda" id="legenda"></div>
   </section>
 
+  <section aria-labelledby="t-tempo" id="sec-tempo">
+    <h2 id="t-tempo">Ao longo do tempo</h2>
+    <div class="tempo-topo">
+      <p class="sub" id="tempo-sub"></p>
+      <label class="troca"><input type="checkbox" id="so-indicador"> Só reviews com indicador</label>
+    </div>
+    <div id="tempo"></div>
+    <div class="legenda" id="legenda-tempo" aria-hidden="true"></div>
+    <p class="estado" style="margin-top:var(--e4)">Conta só as reviews coletadas, não todas as reviews dos jogos: a altura das colunas
+      depende de como a coleta foi feita (por exemplo, coletar as mais recentes enche os últimos meses).</p>
+  </section>
+
   <section aria-labelledby="t-jogos">
     <h2 id="t-jogos">Por jogo</h2>
-    <p class="sub" style="margin-bottom: var(--e3)">Escolha um jogo para ver só os reviews dele na lista abaixo.</p>
-    <div class="jogos" id="jogos"></div>
+    <p class="sub" style="margin-bottom: var(--e3)">Clique no nome de um jogo para filtrar a linha do tempo e a lista de reviews. Clique no título de uma coluna para ordenar.</p>
+    <div class="rolagem"><table class="tab-jogos" id="tab-jogos"></table></div>
+  </section>
+
+  <section aria-labelledby="t-rec" id="sec-rec">
+    <h2 id="t-rec">Recomendação por categoria</h2>
+    <p class="sub" style="margin-bottom: var(--e4)">Quantos reviews de cada categoria recomendam o jogo, segundo a própria Steam.</p>
+    <div class="rec-lista" id="rec"></div>
+    <div class="chave"><span class="k-sim">Recomenda</span><span class="k-nao">Não recomenda</span></div>
   </section>
 
   <section aria-labelledby="t-ind">
@@ -175,6 +233,8 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
       <label>Buscar no texto <input type="search" id="f-busca" placeholder="ex.: travando, rosto"></label>
     </div>
     <div class="cats" id="f-cats" role="group" aria-label="Filtrar por categoria"></div>
+    <div class="chip" id="chip-periodo" hidden><span>Período: <b id="chip-texto"></b></span>
+      <button class="mais" type="button" id="limpar-periodo" style="margin-top:0">Limpar período</button></div>
     <p class="estado" id="estado" aria-live="polite" style="margin-top: var(--e4)"></p>
     <div class="lista" id="lista"></div>
     <button class="mais" id="mais" type="button">Mostrar mais 30</button>
@@ -183,7 +243,7 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
   <footer id="rodape"></footer>
 </main>
 
-<script type="application/json" id="dados">{"titulo": "Triagem de reviews de jogos digitais com IA simbólica", "gerado": "12/11/2026 08:56", "versao_base": "1.1", "com_indicador": 5, "periodo": null, "idiomas": [], "fonte": "", "total": 7, "categorias": ["Tecnico", "Afetivo-visual", "Misto", "Indefinido"], "geral": {"Tecnico": 2, "Afetivo-visual": 2, "Misto": 1, "Indefinido": 2}, "por_jogo": {"Jogo Teste": {"Tecnico": 2, "Afetivo-visual": 2, "Misto": 1, "Indefinido": 2}}, "indicadores": {"t": [["fecha sozinho", 1], ["servidor cai", 1], ["travando", 1]], "a": [["parece um homem", 1], ["personagem feia", 1], ["rosto estranho", 1], ["sem feminilidade", 1]]}, "avaliacao": null, "reviews": [{"id": "1", "jogo": "Jogo Teste", "cat": "Tecnico", "regra": "R1", "conf": 1.0, "et": 3, "ea": 0, "it": ["fecha sozinho"], "ia": [], "texto": "O jogo fecha sozinho durante a primeira fase.", "cortado": false, "marcas": [[7, 20, "t", false]], "rec": "nao", "data": ""}, {"id": "2", "jogo": "Jogo Teste", "cat": "Afetivo-visual", "regra": "R2", "conf": 1.0, "et": 0, "ea": 2, "it": [], "ia": ["rosto estranho"], "texto": "A personagem principal tem um rosto estranho.", "cortado": false, "marcas": [[30, 44, "a", false]], "rec": "nao", "data": ""}, {"id": "3", "jogo": "Jogo Teste", "cat": "Misto", "regra": "R3", "conf": 0.5, "et": 3, "ea": 3, "it": ["servidor cai"], "ia": ["parece um homem"], "texto": "O servidor cai e a protagonista parece um homem.", "cortado": false, "marcas": [[2, 14, "t", false], [32, 47, "a", false]], "rec": "nao", "data": ""}, {"id": "4", "jogo": "Jogo Teste", "cat": "Indefinido", "regra": "R4", "conf": 0.0, "et": 0, "ea": 0, "it": [], "ia": [], "texto": "Gostei da historia e da jogabilidade.", "cortado": false, "marcas": [], "rec": "sim", "data": ""}, {"id": "5", "jogo": "Jogo Teste", "cat": "Tecnico", "regra": "R1", "conf": 1.0, "et": 2, "ea": 0, "it": ["travando"], "ia": [], "texto": "Travando toda hora, impossivel jogar.", "cortado": false, "marcas": [[0, 8, "t", false]], "rec": "nao", "data": ""}, {"id": "6", "jogo": "Jogo Teste", "cat": "Afetivo-visual", "regra": "R2", "conf": 1.0, "et": 0, "ea": 6, "it": [], "ia": ["personagem feia", "sem feminilidade"], "texto": "Personagem feia e sem feminilidade nenhuma.", "cortado": false, "marcas": [[0, 15, "a", false], [18, 34, "a", false]], "rec": "nao", "data": ""}, {"id": "7", "jogo": "Jogo Teste", "cat": "Indefinido", "regra": "R4", "conf": 0.0, "et": 0, "ea": 0, "it": [], "ia": [], "texto": "Otimo jogo, recomendo bastante.", "cortado": false, "marcas": [], "rec": "sim", "data": ""}]}</script>
+<script type="application/json" id="dados">{"titulo": "Triagem de reviews de jogos digitais com IA simbólica", "gerado": "12/11/2026 09:14", "versao_base": "1.1", "com_indicador": 5, "periodo": null, "idiomas": [], "fonte": "", "total": 7, "categorias": ["Tecnico", "Afetivo-visual", "Misto", "Indefinido"], "geral": {"Tecnico": 2, "Afetivo-visual": 2, "Misto": 1, "Indefinido": 2}, "por_jogo": {"Jogo Teste": {"Tecnico": 2, "Afetivo-visual": 2, "Misto": 1, "Indefinido": 2}}, "indicadores": {"t": [["fecha sozinho", 1], ["servidor cai", 1], ["travando", 1]], "a": [["parece um homem", 1], ["personagem feia", 1], ["rosto estranho", 1], ["sem feminilidade", 1]]}, "recomendacao": {"Tecnico": {"sim": 0, "nao": 2}, "Afetivo-visual": {"sim": 0, "nao": 2}, "Misto": {"sim": 0, "nao": 1}, "Indefinido": {"sim": 2, "nao": 0}}, "rec_por_jogo": {"Jogo Teste": [2, 7]}, "avaliacao": null, "reviews": [{"id": "1", "jogo": "Jogo Teste", "cat": "Tecnico", "regra": "R1", "conf": 1.0, "et": 3, "ea": 0, "it": ["fecha sozinho"], "ia": [], "texto": "O jogo fecha sozinho durante a primeira fase.", "cortado": false, "marcas": [[7, 20, "t", false]], "rec": "nao", "data": ""}, {"id": "2", "jogo": "Jogo Teste", "cat": "Afetivo-visual", "regra": "R2", "conf": 1.0, "et": 0, "ea": 2, "it": [], "ia": ["rosto estranho"], "texto": "A personagem principal tem um rosto estranho.", "cortado": false, "marcas": [[30, 44, "a", false]], "rec": "nao", "data": ""}, {"id": "3", "jogo": "Jogo Teste", "cat": "Misto", "regra": "R3", "conf": 0.5, "et": 3, "ea": 3, "it": ["servidor cai"], "ia": ["parece um homem"], "texto": "O servidor cai e a protagonista parece um homem.", "cortado": false, "marcas": [[2, 14, "t", false], [32, 47, "a", false]], "rec": "nao", "data": ""}, {"id": "4", "jogo": "Jogo Teste", "cat": "Indefinido", "regra": "R4", "conf": 0.0, "et": 0, "ea": 0, "it": [], "ia": [], "texto": "Gostei da historia e da jogabilidade.", "cortado": false, "marcas": [], "rec": "sim", "data": ""}, {"id": "5", "jogo": "Jogo Teste", "cat": "Tecnico", "regra": "R1", "conf": 1.0, "et": 2, "ea": 0, "it": ["travando"], "ia": [], "texto": "Travando toda hora, impossivel jogar.", "cortado": false, "marcas": [[0, 8, "t", false]], "rec": "nao", "data": ""}, {"id": "6", "jogo": "Jogo Teste", "cat": "Afetivo-visual", "regra": "R2", "conf": 1.0, "et": 0, "ea": 6, "it": [], "ia": ["personagem feia", "sem feminilidade"], "texto": "Personagem feia e sem feminilidade nenhuma.", "cortado": false, "marcas": [[0, 15, "a", false], [18, 34, "a", false]], "rec": "nao", "data": ""}, {"id": "7", "jogo": "Jogo Teste", "cat": "Indefinido", "regra": "R4", "conf": 0.0, "et": 0, "ea": 0, "it": [], "ia": [], "texto": "Otimo jogo, recomendo bastante.", "cortado": false, "marcas": [], "rec": "sim", "data": ""}]}</script>
 <script>
 (function () {
   "use strict";
@@ -224,6 +284,10 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
   var MARCA = { "Tecnico": "t", "Afetivo-visual": "a", "Misto": "m", "Indefinido": "i" };
   var SINGULAR = { "Tecnico": "técnico", "Afetivo-visual": "afetivo-visual", "Misto": "misto" };
   var PLURAL = { "Tecnico": "técnicos", "Afetivo-visual": "afetivo-visuais", "Misto": "mistos" };
+  var PLURAL_I = { "Tecnico": "técnicos", "Afetivo-visual": "afetivo-visuais", "Misto": "mistos", "Indefinido": "indefinidos" };
+  var SINGULAR_I = { "Tecnico": "técnico", "Afetivo-visual": "afetivo-visual", "Misto": "misto", "Indefinido": "indefinido" };
+  var nCat = function (n, c) { return fmt.format(n) + " " + (n === 1 ? SINGULAR_I[c] : PLURAL_I[c]); };
+  var nReviews = function (n) { return fmt.format(n) + (n === 1 ? " review" : " reviews"); };
   var dataBr = function (iso) { return iso.split("-").reverse().join("/"); };
   var lista_e = function (itens) {   // ["a","b","c"] -> a, b e c (como nós DOM)
     var out = [];
@@ -303,30 +367,209 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
   });
 
   // filtros
-  var estado = { jogo: "", cat: "", busca: "", limite: 30 };
+  var estado = { jogo: "", cat: "", busca: "", limite: 30, periodo: null, soIndicador: false };
   var selJogo = document.getElementById("f-jogo");
-  var jogosBox = document.getElementById("jogos");
   var botoesJogo = [];
-  Object.keys(D.por_jogo).forEach(function (j) {
-    var cont = D.por_jogo[j], tot = 0;
-    D.categorias.forEach(function (c) { tot += cont[c]; });
-    var trilha = el("div", { classe: "barra" });
-    barra(cont, tot, trilha);
-    var b = el("button", { classe: "jogo", type: "button", "aria-pressed": "false" }, [
-      el("span", { classe: "nome" }, [j, el("small", { classe: "num", texto: fmt.format(tot) + " reviews" })]),
-      trilha,
-      el("span", { classe: "conta num", texto: "Técnico " + pct(cont["Tecnico"], tot) + ", afetivo-visual " + pct(cont["Afetivo-visual"], tot) + ", misto " + pct(cont["Misto"], tot) })
-    ]);
-    b.addEventListener("click", function () {
-      estado.jogo = estado.jogo === j ? "" : j;
-      selJogo.value = estado.jogo; estado.limite = 30; render();
-      document.getElementById("t-rev").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-    });
-    botoesJogo.push([j, b]);
-    jogosBox.appendChild(b);
-    selJogo.appendChild(el("option", { value: j, texto: j }));
+  var escolherJogo = function (j) { estado.jogo = estado.jogo === j ? "" : j; selJogo.value = estado.jogo; estado.periodo = null; estado.limite = 30; render(); };
+
+  // tabela comparativa por jogo
+  var COLUNAS = [
+    { chave: "jogo", titulo: "Jogo", texto: true },
+    { chave: "total", titulo: "Reviews" },
+    { chave: "com", titulo: "Com indicador", cor: "var(--tinta-suave)" },
+    { chave: "Tecnico", titulo: "Técnico", cor: "var(--tec)" },
+    { chave: "Afetivo-visual", titulo: "Afetivo-visual", cor: "var(--afe)" },
+    { chave: "Misto", titulo: "Misto", cor: "color-mix(in srgb, var(--tec) 50%, var(--afe))" },
+    { chave: "rec", titulo: "Recomendam", cor: "var(--sim)" }
+  ];
+  var linhasJogo = Object.keys(D.por_jogo).map(function (j) {
+    var c = D.por_jogo[j], tot = 0;
+    D.categorias.forEach(function (k) { tot += c[k]; });
+    var rp = D.rec_por_jogo[j];
+    return { jogo: j, total: tot, com: tot - c["Indefinido"], "Tecnico": c["Tecnico"], "Afetivo-visual": c["Afetivo-visual"],
+      "Misto": c["Misto"], rec: rp ? rp[0] : null, recBase: rp ? rp[1] : 0 };
   });
-  selJogo.addEventListener("change", function () { estado.jogo = selJogo.value; estado.limite = 30; render(); });
+  var temRec = linhasJogo.some(function (l) { return l.rec !== null; });
+  var colunas = COLUNAS.filter(function (c) { return c.chave !== "rec" || temRec; });
+  var ordem = { chave: "jogo", desc: false };
+  var valor = function (l, k) {   // valor usado para ordenar (percentual, exceto jogo e total)
+    if (k === "jogo") return l.jogo.toLowerCase();
+    if (k === "total") return l.total;
+    if (k === "rec") return l.recBase ? l.rec / l.recBase : -1;
+    return l.total ? l[k] / l.total : 0;
+  };
+  var tab = document.getElementById("tab-jogos");
+  function desenharTabela() {
+    tab.textContent = "";
+    var linhas = linhasJogo.slice().sort(function (a, b) {
+      var x = valor(a, ordem.chave), y = valor(b, ordem.chave);
+      var r = x < y ? -1 : x > y ? 1 : 0;
+      return ordem.desc ? -r : r;
+    });
+    var cab = el("tr");
+    colunas.forEach(function (c) {
+      var th = el("th", { scope: "col" });
+      if (ordem.chave === c.chave) th.setAttribute("aria-sort", ordem.desc ? "descending" : "ascending");
+      var bt = el("button", { classe: "ordenar", type: "button", texto: c.titulo, "aria-label": "Ordenar por " + c.titulo.toLowerCase() });
+      bt.addEventListener("click", function () {
+        if (ordem.chave === c.chave) ordem.desc = !ordem.desc; else { ordem.chave = c.chave; ordem.desc = !c.texto; }
+        desenharTabela();
+      });
+      th.appendChild(bt); cab.appendChild(th);
+    });
+    tab.appendChild(el("thead", {}, [cab]));
+    var tb = el("tbody");
+    botoesJogo = [];
+    linhas.forEach(function (l) {
+      var tr = el("tr");
+      colunas.forEach(function (c) {
+        if (c.chave === "jogo") {
+          var b = el("button", { classe: "jogo-btn", type: "button", "aria-pressed": estado.jogo === l.jogo ? "true" : "false", texto: l.jogo });
+          b.addEventListener("click", function () { escolherJogo(l.jogo); });
+          botoesJogo.push([l.jogo, b]);
+          tr.appendChild(el("th", { scope: "row" }, [b]));
+        } else if (c.chave === "total") {
+          tr.appendChild(el("td", { classe: "num", texto: fmt.format(l.total) }));
+        } else {
+          var n = l[c.chave], base = c.chave === "rec" ? l.recBase : l.total;
+          if (n === null || !base) { tr.appendChild(el("td", { texto: "sem dado" })); return; }
+          var frac = n / base;
+          tr.appendChild(el("td", {}, [el("div", { classe: "celula" }, [
+            el("span", { classe: "num", texto: pct(n, base) }),
+            el("span", { classe: "mini", "aria-hidden": "true" }, [el("span", { style: "width:" + (100 * frac) + "%;background:" + c.cor })]),
+            el("small", { classe: "num", texto: fmt.format(n) + " de " + fmt.format(base) })
+          ])]));
+        }
+      });
+      tb.appendChild(tr);
+    });
+    tab.appendChild(tb);
+  }
+  desenharTabela();
+  Object.keys(D.por_jogo).forEach(function (j) { selJogo.appendChild(el("option", { value: j, texto: j })); });
+  selJogo.addEventListener("change", function () { estado.jogo = selJogo.value; estado.periodo = null; estado.limite = 30; render(); });
+
+  // recomendação por categoria
+  var recBox = document.getElementById("rec");
+  if (!D.recomendacao) {
+    document.getElementById("sec-rec").hidden = true;
+  } else {
+    D.categorias.forEach(function (c) {
+      var r = D.recomendacao[c], tot = r.sim + r.nao;
+      if (!tot) return;
+      var b = el("div", { classe: "barra", role: "img",
+        "aria-label": NOMES[c] + ": " + pct(r.sim, tot) + " recomendam, " + pct(r.nao, tot) + " não recomendam" });
+      if (r.sim) b.appendChild(el("div", { classe: "fatia r-sim", style: "flex:" + r.sim }));
+      if (r.nao) b.appendChild(el("div", { classe: "fatia r-nao", style: "flex:" + r.nao }));
+      recBox.appendChild(el("div", { classe: "rec-linha" }, [
+        el("span", {}, [el("mark", { classe: MARCA[c], texto: NOMES[c] }), el("small", { classe: "num", style: "color:var(--tinta-suave);margin-left:var(--e2)", texto: nReviews(tot) })]),
+        b,
+        el("span", { classe: "conta num", texto: pct(r.sim, tot) + " recomendam" })
+      ]));
+    });
+  }
+
+  // ao longo do tempo
+  var tempoBox = document.getElementById("tempo"), tempoSub = document.getElementById("tempo-sub");
+  var MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  var paraDia = function (iso) { var p = iso.split("-"); return Date.UTC(+p[0], +p[1] - 1, +p[2]); };
+  var isoDe = function (ms) { return new Date(ms).toISOString().slice(0, 10); };
+  var comData = D.reviews.filter(function (r) { return /^\d{4}-\d{2}-\d{2}$/.test(r.data); });
+  var porMes = D.periodo && (paraDia(D.periodo[1]) - paraDia(D.periodo[0])) / 864e5 > 120;
+  function baldes() {
+    if (!D.periodo) return [];
+    var out = [], ini = paraDia(D.periodo[0]), fim = paraDia(D.periodo[1]);
+    if (porMes) {
+      var d = new Date(ini); d.setUTCDate(1);
+      while (d.getTime() <= fim) {
+        var a = d.getTime(); d.setUTCMonth(d.getUTCMonth() + 1);
+        var m = new Date(a);
+        out.push({ ini: isoDe(a), fim: isoDe(d.getTime()), curto: MESES[m.getUTCMonth()] + "/" + String(m.getUTCFullYear()).slice(2),
+          longo: MESES[m.getUTCMonth()] + "/" + m.getUTCFullYear() });
+      }
+    } else {
+      var dia = new Date(ini).getUTCDay(), seg = ini - ((dia + 6) % 7) * 864e5;   // começa na segunda-feira
+      for (var t = seg; t <= fim; t += 7 * 864e5) {
+        var dd = new Date(t), rot = String(dd.getUTCDate()).padStart(2, "0") + "/" + String(dd.getUTCMonth() + 1).padStart(2, "0");
+        out.push({ ini: isoDe(t), fim: isoDe(t + 7 * 864e5), curto: rot, longo: "semana de " + rot + "/" + dd.getUTCFullYear() });
+      }
+    }
+    return out;
+  }
+  var BALDES = baldes();
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var svgEl = function (tag, attrs) { var e = document.createElementNS(SVGNS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; };
+  var ORDEM_PILHA = ["Tecnico", "Afetivo-visual", "Misto", "Indefinido"];
+  document.getElementById("so-indicador").addEventListener("change", function (ev) { estado.soIndicador = ev.target.checked; desenharTempo(); });
+  var legT = document.getElementById("legenda-tempo");
+  ORDEM_PILHA.forEach(function (c) { legT.appendChild(el("div", {}, [el("span", { classe: "cor f-" + c }), el("span", { texto: NOMES[c] })])); });
+  function desenharTempo() {
+    if (!BALDES.length || !comData.length) {
+      document.getElementById("sec-tempo").hidden = true; return;
+    }
+    var fonte = comData.filter(function (r) { return (!estado.jogo || r.jogo === estado.jogo) && (!estado.soIndicador || r.cat !== "Indefinido"); });
+    var cont = BALDES.map(function (b) {
+      var c = { total: 0 }; ORDEM_PILHA.forEach(function (k) { c[k] = 0; });
+      fonte.forEach(function (r) { if (r.data >= b.ini && r.data < b.fim) { c[r.cat]++; c.total++; } });
+      return c;
+    });
+    var maior = Math.max.apply(null, cont.map(function (c) { return c.total; }).concat([1]));
+    var max = (function (v) {   // teto "redondo" do eixo: 115 -> 120, 7 -> 8
+      var pot = Math.pow(10, Math.floor(Math.log10(v)));
+      var m = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].find(function (k) { return k * pot >= v; });
+      return Math.max(2, Math.round(m * pot));
+    })(maior);
+    tempoSub.textContent = (porMes ? "Reviews por mês" : "Reviews por semana") + (estado.jogo ? " de " + estado.jogo : ", todos os jogos") +
+      ". Clique numa coluna para ver só os reviews daquele período.";
+    var W = Math.max(280, tempoBox.clientWidth || 800), H = 240, esq = 36, base = H - 28, topo = 8;
+    var largura = (W - esq) / BALDES.length, barraW = Math.max(2, Math.min(56, largura * 0.72));
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "group", "aria-label": tempoSub.textContent });
+    var defs = svgEl("defs", {}), pat = svgEl("pattern", { id: "hachura", width: 8, height: 8, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" });
+    pat.appendChild(svgEl("rect", { "class": "h1", width: 4, height: 8 })); pat.appendChild(svgEl("rect", { "class": "h2", x: 4, width: 4, height: 8 }));
+    defs.appendChild(pat); svg.appendChild(defs);
+    var eixo = svgEl("g", { "class": "eixo", "aria-hidden": "true" });
+    [0, Math.round(max / 2), max].forEach(function (v, i, arr) {
+      if (i === 1 && (v === 0 || v === max)) return;
+      var y = base - (base - topo) * v / max;
+      eixo.appendChild(svgEl("line", { x1: esq, x2: W, y1: y, y2: y }));
+      var t = svgEl("text", { x: esq - 6, y: y + 4, "text-anchor": "end" }); t.textContent = fmt.format(v); eixo.appendChild(t);
+    });
+    var passo = Math.ceil(BALDES.length / Math.max(1, Math.floor((W - esq) / 56)));
+    BALDES.forEach(function (b, i) {
+      if (i % passo) return;
+      var t = svgEl("text", { x: esq + largura * (i + 0.5), y: H - 8, "text-anchor": "middle" }); t.textContent = b.curto; eixo.appendChild(t);
+    });
+    svg.appendChild(eixo);
+    tempoBox.classList.toggle("escolhido", !!estado.periodo);
+    BALDES.forEach(function (b, i) {
+      var c = cont[i], x = esq + largura * i;
+      var partes = ORDEM_PILHA.filter(function (k) { return c[k]; }).map(function (k) { return nCat(c[k], k); });
+      var ativo = estado.periodo && estado.periodo.ini === b.ini;
+      var g = svgEl("g", { "class": "col", tabindex: "0", role: "button", "aria-pressed": ativo ? "true" : "false",
+        "aria-label": b.longo + ": " + nReviews(c.total) + (partes.length ? " (" + partes.join(", ") + ")" : "") + ". " + (ativo ? "Clique para limpar o período." : "Clique para filtrar a lista.") });
+      g.appendChild(svgEl("rect", { "class": "alvo", x: x + 1, y: topo, width: largura - 2, height: base - topo, rx: 3 }));
+      var y = base;
+      ORDEM_PILHA.forEach(function (k) {
+        if (!c[k]) return;
+        var h = (base - topo) * c[k] / max;
+        y -= h;
+        g.appendChild(svgEl("rect", { "class": "s-" + k, x: x + (largura - barraW) / 2, y: y, width: barraW, height: Math.max(h, 1) }));
+      });
+      var titulo = svgEl("title", {}); titulo.textContent = b.longo + ": " + nReviews(c.total) + (partes.length ? " (" + partes.join(", ") + ")" : ""); g.appendChild(titulo);
+      var escolher = function () {
+        estado.periodo = ativo ? null : { ini: b.ini, fim: b.fim, rotulo: b.longo };
+        estado.limite = 30; render();
+        var foco = tempoBox.querySelectorAll(".col")[i]; if (foco) foco.focus();
+      };
+      g.addEventListener("click", escolher);
+      g.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); escolher(); } });
+      svg.appendChild(g);
+    });
+    tempoBox.textContent = ""; tempoBox.appendChild(svg);
+  }
+  var redesenho = null;
+  window.addEventListener("resize", function () { clearTimeout(redesenho); redesenho = setTimeout(desenharTempo, 150); });
+  document.getElementById("limpar-periodo").addEventListener("click", function () { estado.periodo = null; estado.limite = 30; render(); });
   var busca = document.getElementById("f-busca");
   busca.addEventListener("input", function () { estado.busca = busca.value.trim().toLowerCase(); estado.limite = 30; render(); });
   var cats = document.getElementById("f-cats");
@@ -345,16 +588,30 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     if (!lista.length) {
       bloco.appendChild(el("p", { classe: "vazio", texto: "Nenhum indicador " + g[1].toLowerCase().replace(/s$/, "") + " foi encontrado nestes reviews." }));
     } else {
-      var max = lista[0][1];
+      var max = lista[0][1], VISIVEIS = 8, aberto = false;
       var ul = el("ul", { classe: "ind-lista" });
-      lista.forEach(function (par) {
-        ul.appendChild(el("li", {}, [
-          el("span", { texto: par[0] }),
-          el("span", { classe: "trilho", "aria-hidden": "true" }, [el("span", { classe: "enchimento", style: "display:block;width:" + (100 * par[1] / max) + "%;background:" + g[2] })]),
-          el("span", { classe: "num", texto: fmt.format(par[1]) })
-        ]));
-      });
-      bloco.appendChild(ul);
+      var resto = el("p", { classe: "estado", style: "margin:var(--e3) 0 0" });
+      var bt = el("button", { classe: "mais", type: "button", "aria-expanded": "false", style: "margin-top:var(--e2)" });
+      var pintar = function () {
+        ul.textContent = "";
+        (aberto ? lista : lista.slice(0, VISIVEIS)).forEach(function (par) {
+          ul.appendChild(el("li", {}, [
+            el("span", { texto: par[0] }),
+            el("span", { classe: "trilho", "aria-hidden": "true" }, [el("span", { classe: "enchimento", style: "display:block;width:" + (100 * par[1] / max) + "%;background:" + g[2] })]),
+            el("span", { classe: "num", texto: fmt.format(par[1]) })
+          ]));
+        });
+        var escondidos = lista.slice(VISIVEIS), uma = escondidos.filter(function (p) { return p[1] === 1; }).length;
+        resto.hidden = aberto || !escondidos.length;
+        resto.textContent = escondidos.length ? "Mais " + escondidos.length + (escondidos.length === 1 ? " indicador" : " indicadores") +
+          (uma ? ", " + (uma === escondidos.length ? (uma === 1 ? "com" : "todos com") : uma + " deles com") + " uma ocorrência só." : ".") : "";
+        bt.hidden = !escondidos.length;
+        bt.textContent = aberto ? "Mostrar só os " + VISIVEIS + " primeiros" : "Ver todos os " + lista.length;
+        bt.setAttribute("aria-expanded", aberto ? "true" : "false");
+      };
+      bt.addEventListener("click", function () { aberto = !aberto; pintar(); });
+      pintar();
+      bloco.appendChild(ul); bloco.appendChild(resto); bloco.appendChild(bt);
     }
     indBox.appendChild(bloco);
   });
@@ -477,8 +734,13 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
 
   function render() {
     botoesJogo.forEach(function (p) { p[1].setAttribute("aria-pressed", p[0] === estado.jogo ? "true" : "false"); });
+    desenharTempo();
+    var chip = document.getElementById("chip-periodo");
+    chip.hidden = !estado.periodo;
+    if (estado.periodo) document.getElementById("chip-texto").textContent = estado.periodo.rotulo;
     var base = ordenados.filter(function (r) {
-      return (!estado.jogo || r.jogo === estado.jogo) && (!estado.busca || r.texto.toLowerCase().indexOf(estado.busca) >= 0);
+      return (!estado.jogo || r.jogo === estado.jogo) && (!estado.busca || r.texto.toLowerCase().indexOf(estado.busca) >= 0) &&
+        (!estado.periodo || (r.data >= estado.periodo.ini && r.data < estado.periodo.fim));
     });
     botoesCat.forEach(function (p) {
       var n = p[0] ? base.filter(function (r) { return r.cat === p[0]; }).length : base.length;
@@ -490,7 +752,7 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     filtrados.slice(0, estado.limite).forEach(function (r) { lista.appendChild(cartao(r)); });
     info.textContent = filtrados.length
       ? "Mostrando " + fmt.format(Math.min(estado.limite, filtrados.length)) + " de " + fmt.format(filtrados.length) + " reviews, os com mais indicadores primeiro."
-      : "Nenhum review com esses filtros. Tente outra categoria ou limpe a busca.";
+      : "Nenhum review com esses filtros. Tente outra categoria, limpe a busca ou o período.";
     mais.hidden = filtrados.length <= estado.limite;
   }
   render();

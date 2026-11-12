@@ -6,7 +6,9 @@ escuro e em 375 px.
 
 **Andamento:** fase 1 implementada em 12/11/2026 (frase-achado, segunda
 barra ampliada ligada por um funil à barra geral, título do TCC e
-contexto da coleta). Fases 2 a 5 pendentes.
+contexto da coleta). Fase 2 implementada em 12/11/2026 (linha do tempo
+clicável, categoria × recomendação, tabela comparativa por jogo
+ordenável, indicadores com "ver todos"). Fases 3 a 5 pendentes.
 
 ## Para que serve a tela
 
@@ -64,7 +66,7 @@ contexto da coleta). Fases 2 a 5 pendentes.
   maior `data_criacao`), idioma e nome do trabalho. Título passa a ser
   o do TCC, não "Triagem de reviews".
 
-### Fase 2: os gráficos que faltam
+### Fase 2: os gráficos que faltam (feita)
 - **2.1 Linha do tempo.** Reviews por semana (ou mês, conforme o
   intervalo), empilhadas por categoria, com filtro por jogo. Clicar numa
   coluna filtra a lista de reviews por aquele período. SVG gerado no
