@@ -232,7 +232,7 @@ section { margin-top: var(--e7); }
 
 /* por jogo */
 .jogos { display: grid; gap: var(--e2); }
-.jogo { display: grid; grid-template-columns: 220px 1fr 250px; gap: var(--e4); align-items: center;
+.jogo { display: grid; grid-template-columns: 220px 1fr 300px; gap: var(--e4); align-items: center;
   width: 100%; padding: var(--e3) var(--e3); border: 1px solid transparent; border-radius: var(--r-medio);
   background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; min-height: 44px; }
 .jogo:hover { border-color: var(--linha); background: var(--papel); }

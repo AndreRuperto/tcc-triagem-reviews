@@ -67,6 +67,27 @@ auditável a olho. Para gerar de novo sem reclassificar:
 
     python -m src.painel --pasta reports/steam
 
+### Abrir numa porta local
+Pelo Docker (fica rodando em segundo plano):
+
+    docker compose up -d painel      # http://localhost:8090
+    docker compose stop painel       # para
+
+Sem Docker, com Python:
+
+    python -m src.servidor           # http://localhost:8090 (Ctrl+C para parar)
+
+A página inicial lista os painéis de `reports/`. O servidor desliga o
+cache do navegador, então basta recarregar a página depois de uma nova
+classificação. Para usar outra porta: `PAINEL_PORTA=9000 docker compose
+up -d painel` ou `python -m src.servidor --porta 9000`.
+
+A porta fica presa a 127.0.0.1, então na VM o painel não fica exposto
+na internet. Para ver o painel da VM no seu computador, abra um túnel
+SSH e acesse http://localhost:8090 no seu navegador:
+
+    ssh -L 8090:localhost:8090 <usuario>@<ip-da-vm>
+
 ## Status atual
 - [x] VM provisionada e configurada
 - [x] Docker instalado e testado

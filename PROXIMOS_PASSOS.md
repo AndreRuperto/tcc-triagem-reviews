@@ -10,9 +10,9 @@
   - `src/amostragem.py`: amostra estratificada e cega para o gabarito;
   - `src/avaliacao.py`: matriz de confusão, precisão/revocação/F1, kappa entre anotadores, lista de divergências.
 - `main.py --entrada/--saida` para classificar um ou vários CSVs.
-- Painel HTML offline para a banca (`src/painel.py`): gerado em cada pasta de relatórios; o das reviews da Steam está em `reports/steam/painel.html`.
+- Painel HTML offline para a banca (`src/painel.py`): gerado em cada pasta de relatórios; o das reviews da Steam está em `reports/steam/painel.html`. Para abrir numa porta local: `docker compose up -d painel` (ou `python -m src.servidor`) → http://localhost:8090.
 - Protocolo de rotulagem (rascunho): `docs/protocolo_rotulagem.md`.
-- 43 testes (`python -m unittest discover -s tests`).
+- 46 testes (`python -m unittest discover -s tests`).
 
 ## Primeira coleta real (11/11/2026, 100 reviews pt-BR por jogo, mais recentes)
 | Jogo | appid | reviews pt-BR disponíveis |
@@ -30,7 +30,7 @@ Achados (importantes para a metodologia):
 - Os CSVs coletados estão versionados em `data/steam_*.csv` (textos públicos da Steam, sem o steamid).
 
 ## Estado atual
-- **Funciona e foi testado:** os 43 testes no Python local e na imagem Docker x86; coleta real pela API nova da Steam; fluxo completo pela linha de comando com dados de exemplo.
+- **Funciona e foi testado:** os 46 testes no Python local; a imagem Docker x86 foi reconstruída e o serviço `painel` respondeu em http://localhost:8090; coleta real pela API nova da Steam; fluxo completo pela linha de comando com dados de exemplo.
 - **Não testado:**
   - build da imagem em ARM64 (a VM Oracle). As versões fixadas têm pacote para Python 3.11 aarch64, mas o build não foi rodado lá.
 
