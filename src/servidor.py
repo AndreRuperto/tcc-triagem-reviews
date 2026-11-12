@@ -12,6 +12,9 @@ A pagina inicial lista os painel.html encontrados em reports/. As
 respostas vao com Cache-Control: no-store, para o navegador nunca
 mostrar um painel antigo depois de uma nova classificacao.
 
+No Railway: a porta vem da variavel PORT e o start command passa
+--endereco 0.0.0.0 (o painel fica publico no dominio do servico).
+
 Por padrao escuta so em 127.0.0.1 (nada fica exposto na rede). Dentro
 do container ele escuta em 0.0.0.0, e quem limita a 127.0.0.1 e o
 mapeamento de porta do docker-compose.
@@ -20,6 +23,7 @@ mapeamento de porta do docker-compose.
 import argparse
 import html
 import json
+import os
 import re
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -123,7 +127,8 @@ def criar_servidor(raiz: Path, porta: int, endereco: str = "127.0.0.1") -> Threa
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description="Serve os paineis de reports/ numa porta local.")
     parser.add_argument("--pasta", type=Path, default=Path("reports"))
-    parser.add_argument("--porta", type=int, default=8090)
+    parser.add_argument("--porta", type=int, default=int(os.environ.get("PORT", 8090)),
+                        help="Padrao: variavel PORT (Railway) ou 8090")
     parser.add_argument("--endereco", default="127.0.0.1", help="Use 0.0.0.0 so dentro de container")
     args = parser.parse_args(argv)
 
