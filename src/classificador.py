@@ -8,7 +8,7 @@ e Apendice A (pseudocodigo) para a fundamentacao teorica completa.
 v1.1: adiciona normalizacao morfologica (stemming RSLP) como camada
 complementar a comparacao literal, para tratar variacoes de conjugacao
 verbal e flexao de genero/numero nao previstas na base de conhecimento
-(ex: "servidor cai" vs "servidor caiu"). O stemming e uma tecnica
+(ex: "fecha sozinho" vs "fechando sozinho"). O stemming e uma tecnica
 simbolica/deterministica (reducao ao radical por regras linguisticas
 explicitas), nao envolve interpretacao semantica ou aprendizado
 estatistico, preservando a auditabilidade da classificacao (RNF3).
@@ -62,7 +62,9 @@ def normalize_text(value) -> str:
 def stem_phrase(phrase: str) -> str:
     """
     Aplica o stemmer RSLP a cada palavra de uma expressao normalizada,
-    reduzindo cada termo ao seu radical (ex: "caiu"/"cai"/"caindo" -> "ca").
+    reduzindo cada termo ao seu radical (ex: "caindo" -> "caind").
+    Obs.: o RSLP NAO une "cai" e "caiu" (cada um fica como esta); por
+    isso "servidor cai" foi cadastrado explicitamente na base.
     """
     return " ".join(_stemmer.stem(word) for word in phrase.split())
 

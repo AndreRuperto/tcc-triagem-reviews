@@ -31,3 +31,15 @@ Stemming resolve variacoes morfologicas da MESMA palavra (flexao
 verbal, genero, numero), mas nao resolve sinonimos verdadeiros
 (palavras diferentes com sentido equivalente, ex: "trava" vs "buga").
 Para esses casos, ver docs/decisao_sinonimos.md.
+
+## Correcao (2026-11-12): o RSLP nao resolve "cai" x "caiu"
+Ao reexecutar o classificador v1.2, o review 3 continuou como
+Afetivo-visual. Testando o RSLP diretamente:
+
+    servidor -> serv | cai -> cai | caiu -> caiu | caindo -> caind
+
+Ou seja, "cai" e "caiu" nao reduzem ao mesmo radical, e o stemming
+nao cobre esse caso (formas irregulares/curtas do verbo "cair").
+Solucao: cadastrar "servidor cai" (peso 3) explicitamente na base de
+conhecimento, mantendo a decisao auditavel. Formas verbais curtas
+semelhantes devem ir para o dicionario de sinonimos/variacoes curadas.
