@@ -8,7 +8,10 @@ escuro e em 375 px.
 barra ampliada ligada por um funil à barra geral, título do TCC e
 contexto da coleta). Fase 2 implementada em 12/11/2026 (linha do tempo
 clicável, categoria × recomendação, tabela comparativa por jogo
-ordenável, indicadores com "ver todos"). Fases 3 a 5 pendentes.
+ordenável, indicadores com "ver todos"). Fase 3 implementada em
+12/11/2026 (etiqueta de categoria, Misto em duas faixas sólidas em todo
+o painel, ordenação escolhível, horas e votos da Steam no cartão,
+matriz de confusão clicável com % por linha). Fases 4 e 5 pendentes.
 
 ## Para que serve a tela
 
@@ -82,12 +85,14 @@ ordenável, indicadores com "ver todos"). Fases 3 a 5 pendentes.
   (n)"; agrupar os de valor 1 numa linha "outros n indicadores com 1
   ocorrência".
 
-### Fase 3: a lista de reviews
+### Fase 3: a lista de reviews (feita)
 - **3.1 Categoria como etiqueta** no canto do cartão (texto + cor de
   fundo suave), em vez de só negrito no cabeçalho.
 - **3.2 Misto sem hachura:** duas faixas sólidas lado a lado (ciano e
   magenta) na borda do cartão, na legenda e nas barras estreitas; a
-  hachura fica só em barras largas.
+  hachura fica só em barras largas. *Na implementação a hachura saiu de todo lugar,
+  inclusive das barras largas e da linha do tempo, para o Misto ter uma
+  aparência só.*
 - **3.3 Ordenação escolhível:** mais indicadores primeiro (atual), mais
   recentes, mais votadas como úteis (`votos_util`).
 - **3.4 Metadados da Steam no cartão**, quando existirem: horas jogadas

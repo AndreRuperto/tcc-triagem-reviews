@@ -14,6 +14,8 @@ Saidas em reports/avaliacao/:
     matriz_confusao.csv/png  linhas = gabarito manual, colunas = sistema
     divergencias.csv         reviews em que sistema e gabarito discordam,
                              com os indicadores acionados (analise de erros)
+    comparacao.csv           gabarito e sistema de cada review rotulado
+                             (usado pelo painel para filtrar pela matriz)
     resumo.txt               acuracia, F1 macro e kappa
 """
 
@@ -135,6 +137,9 @@ def avaliar(classificados: pd.DataFrame, gabarito: pd.DataFrame, segundo: pd.Dat
         resultado["por_categoria"].to_csv(destino / "metricas.csv", index=False, encoding="utf-8-sig")
         resultado["matriz"].to_csv(destino / "matriz_confusao.csv", encoding="utf-8-sig")
         resultado["divergencias"].to_csv(destino / "divergencias.csv", index=False, encoding="utf-8-sig")
+        # par gabarito x sistema de cada review rotulado: deixa a matriz do painel clicavel
+        juntos[["id_review", "categoria_manual", "categoria"]].to_csv(
+            destino / "comparacao.csv", index=False, encoding="utf-8-sig")
         desenhar_matriz(resultado["matriz"], destino / "matriz_confusao.png")
         (destino / "resumo.txt").write_text(texto_resumo(resultado), encoding="utf-8")
 

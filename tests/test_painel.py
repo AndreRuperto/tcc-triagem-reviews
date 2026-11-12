@@ -104,6 +104,24 @@ class TestGerarPainel(unittest.TestCase):
         ind = painel.montar_dados(df)["indicadores"]["t"]
         self.assertEqual([list(par) for par in ind], [["travando", 3], ["bug", 1]])
 
+    def test_metadados_da_steam_no_review(self):
+        df = self.classificados()
+        df["votos_util"] = [3, float("nan")]
+        df["horas_na_review"] = [12.5, ""]
+        r = {x["id"]: x for x in painel.montar_dados(df)["reviews"]}
+        self.assertEqual((r["1"]["util"], r["1"]["horas"]), (3, 12.5))
+        self.assertEqual((r["2"]["util"], r["2"]["horas"]), (None, None))
+
+    def test_rotulos_manuais_deixam_a_matriz_clicavel(self):
+        av = {"n": 1, "acuracia": 1.0, "f1_macro": 1.0, "kappa": None, "metricas": [], "matriz": [],
+              "rotulos": {"1": "Tecnico"}}
+        dados = painel.montar_dados(self.classificados(), av)
+        r = {x["id"]: x for x in dados["reviews"]}
+        self.assertTrue(dados["clicavel"])
+        self.assertEqual((r["1"]["man"], r["2"]["man"]), ("Tecnico", ""))
+        self.assertNotIn("rotulos", dados["avaliacao"])   # nao vai duplicado no HTML
+        self.assertIn("rotulos", av)                      # e o dict de quem chamou nao e alterado
+
     def test_inclui_a_avaliacao_quando_existe(self):
         with tempfile.TemporaryDirectory() as pasta:
             pasta = Path(pasta)

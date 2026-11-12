@@ -91,7 +91,19 @@ def _lista(valor) -> list:
     return [parte.strip() for parte in valor.split(";") if parte.strip()]
 
 
+def _numero(valor, tipo=float):
+    """Numero de uma celula do CSV, ou None se vazia/invalida."""
+    try:
+        if valor is None or (isinstance(valor, float) and pd.isna(valor)) or str(valor).strip() == "":
+            return None
+        return tipo(float(valor))
+    except (TypeError, ValueError):
+        return None
+
+
 def montar_dados(classificados: pd.DataFrame, avaliacao: dict = None) -> dict:
+    avaliacao = dict(avaliacao) if avaliacao else None
+    rotulos = avaliacao.pop("rotulos", {}) if avaliacao else {}
     reviews = []
     contagem_ind = {"t": {}, "a": {}}
     for linha in classificados.itertuples(index=False):
@@ -120,6 +132,9 @@ def montar_dados(classificados: pd.DataFrame, avaliacao: dict = None) -> dict:
             "marcas": trechos,
             "rec": _texto(getattr(linha, "recomendado", "")),
             "data": _texto(getattr(linha, "data_criacao", "")),
+            "util": _numero(getattr(linha, "votos_util", None), int),
+            "horas": _numero(getattr(linha, "horas_na_review", None)),
+            "man": rotulos.get(str(linha.id_review), ""),
         })
 
     por_jogo = {}
@@ -148,6 +163,7 @@ def montar_dados(classificados: pd.DataFrame, avaliacao: dict = None) -> dict:
         "recomendacao": recomendacao_por_categoria(reviews),
         "rec_por_jogo": recomendacao_por_jogo(reviews),
         "avaliacao": avaliacao,
+        "clicavel": bool(rotulos),
         "reviews": reviews,
     }
 
@@ -203,6 +219,11 @@ def ler_avaliacao(pasta: Path) -> dict:
     total = int(matriz.values.sum())
     acertos = int(sum(valores[i][i] for i in range(min(len(valores), len(valores[0]) if valores else 0))))
     presentes = metricas[metricas["suporte"] > 0]
+    rotulos = {}
+    comparacao = pasta / "comparacao.csv"
+    if comparacao.exists():
+        pares = pd.read_csv(comparacao, encoding="utf-8-sig", dtype={"id_review": str})
+        rotulos = dict(zip(pares["id_review"].astype(str), pares["categoria_manual"].astype(str)))
     kappa = None
     resumo = pasta / "resumo.txt"
     if resumo.exists():
@@ -215,6 +236,7 @@ def ler_avaliacao(pasta: Path) -> dict:
         "kappa": kappa,
         "metricas": metricas.to_dict(orient="records"),
         "matriz": valores,
+        "rotulos": rotulos,
     }
 
 
@@ -280,7 +302,8 @@ section { margin-top: var(--e7); }
 .fatia { min-width: 2px; }
 .f-Tecnico { background: var(--tec); }
 .f-Afetivo-visual { background: var(--afe); }
-.f-Misto { background: repeating-linear-gradient(135deg, var(--tec) 0 7px, var(--afe) 7px 14px); }
+/* misto: duas faixas sólidas lado a lado (hachura fica ilegível em tamanho pequeno) */
+.f-Misto { background: linear-gradient(to right, var(--tec) 50%, var(--afe) 50%); }
 .f-Indefinido { background: var(--ind); }
 /* achado em uma frase */
 .achado { font: 600 1.5rem/1.4 var(--sans); max-width: 40ch; margin: var(--e5) 0 var(--e3); letter-spacing: -0.005em; }
@@ -311,8 +334,7 @@ section { margin-top: var(--e7); }
 #tempo .col:focus-visible .alvo { stroke: var(--foco); stroke-width: 3px; opacity: 1; fill-opacity: .25; }
 #tempo.escolhido .col:not([aria-pressed="true"]) rect:not(.alvo) { opacity: .3; }
 .s-Tecnico { fill: var(--tec); } .s-Afetivo-visual { fill: var(--afe); } .s-Indefinido { fill: var(--ind); }
-.s-Misto { fill: url(#hachura); }
-#hachura .h1 { fill: var(--tec); } #hachura .h2 { fill: var(--afe); }
+
 
 /* por jogo */
 .tab-jogos { width: 100%; min-width: 720px; }
@@ -367,6 +389,11 @@ th:first-child, td:first-child { text-align: left; }
 thead th { font-weight: 600; color: var(--tinta-suave); font-size: .9rem; }
 .matriz td { min-width: 64px; text-align: center; }
 .matriz td.diag { font-weight: 700; }
+.matriz td small { display: block; font-size: .75rem; color: var(--tinta-suave); font-weight: 400; }
+.celula-btn { font: inherit; color: inherit; background: none; border: 1px solid transparent; border-radius: var(--r-pequeno);
+  width: 100%; min-height: 44px; cursor: pointer; padding: var(--e1); }
+.celula-btn:hover { border-color: var(--tinta-suave); }
+.celula-btn[aria-pressed="true"] { border-color: var(--tinta); box-shadow: inset 0 0 0 1px var(--tinta); }
 .rolagem { overflow-x: auto; }
 
 /* reviews */
@@ -385,9 +412,18 @@ input[type=search] { min-width: min(320px, 100%); }
   padding: var(--e4) var(--e5); }
 .review.c-Tecnico { border-left-color: var(--tec); }
 .review.c-Afetivo-visual { border-left-color: var(--afe); }
-.review.c-Misto { border-image: linear-gradient(var(--tec) 50%, var(--afe) 50%) 0 0 0 1; border-left-width: 6px; }
-.cabeca { display: flex; flex-wrap: wrap; gap: var(--e2) var(--e4); align-items: baseline; font-size: .9rem; color: var(--tinta-suave); }
-.cabeca .cat { font-weight: 700; color: var(--tinta); }
+.review.c-Misto { position: relative; border-left-color: transparent; }
+.review.c-Misto::before { content: ""; position: absolute; left: -6px; top: -1px; bottom: -1px; width: 6px;
+  border-radius: var(--r-pequeno) 0 0 var(--r-pequeno); background: linear-gradient(to right, var(--tec) 50%, var(--afe) 50%); }
+.cabeca { display: flex; flex-wrap: wrap; gap: var(--e2) var(--e4); align-items: center; font-size: .9rem; color: var(--tinta-suave); }
+.cabeca .jogo-nome { font-weight: 600; color: var(--tinta); }
+.etiqueta { display: inline-block; font-weight: 700; font-size: .85rem; color: var(--tinta); padding: 2px var(--e3);
+  border-radius: 999px; border: 1px solid var(--ind); background: var(--linha); }
+.etiqueta.c-Tecnico { border-color: var(--tec); background: var(--tec-marca); }
+.etiqueta.c-Afetivo-visual { border-color: var(--afe); background: var(--afe-marca); }
+.etiqueta.c-Misto { border-color: var(--afe); background: linear-gradient(to right, var(--tec-marca) 50%, var(--afe-marca) 50%); }
+.etiqueta.gabarito { font-weight: 600; background: none; border-style: dashed; }
+.meta { display: inline-flex; gap: var(--e1); align-items: center; }
 .texto { font: 1.06rem/1.65 var(--serifa); margin: var(--e3) 0; max-width: 75ch; white-space: pre-wrap; overflow-wrap: anywhere; }
 mark { color: inherit; padding: 0 .12em; border-radius: 2px; }
 mark.t { background: linear-gradient(transparent 30%, var(--tec-marca) 30%); box-shadow: inset 0 -2px 0 var(--tec); }
@@ -473,10 +509,17 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     <div class="filtros">
       <label>Jogo <select id="f-jogo"><option value="">Todos os jogos</option></select></label>
       <label>Buscar no texto <input type="search" id="f-busca" placeholder="ex.: travando, rosto"></label>
+      <label>Ordenar por <select id="f-ordem">
+        <option value="indicadores">Mais indicadores primeiro</option>
+        <option value="recentes">Mais recentes primeiro</option>
+        <option value="uteis">Mais votados como úteis</option>
+      </select></label>
     </div>
     <div class="cats" id="f-cats" role="group" aria-label="Filtrar por categoria"></div>
     <div class="chip" id="chip-periodo" hidden><span>Período: <b id="chip-texto"></b></span>
       <button class="mais" type="button" id="limpar-periodo" style="margin-top:0">Limpar período</button></div>
+    <div class="chip" id="chip-celula" hidden><span>Matriz: <b id="chip-celula-texto"></b></span>
+      <button class="mais" type="button" id="limpar-celula" style="margin-top:0">Limpar filtro da matriz</button></div>
     <p class="estado" id="estado" aria-live="polite" style="margin-top: var(--e4)"></p>
     <div class="lista" id="lista"></div>
     <button class="mais" id="mais" type="button">Mostrar mais 30</button>
@@ -609,7 +652,7 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
   });
 
   // filtros
-  var estado = { jogo: "", cat: "", busca: "", limite: 30, periodo: null, soIndicador: false };
+  var estado = { jogo: "", cat: "", busca: "", limite: 30, periodo: null, soIndicador: false, celula: null };
   var selJogo = document.getElementById("f-jogo");
   var botoesJogo = [];
   var escolherJogo = function (j) { estado.jogo = estado.jogo === j ? "" : j; selJogo.value = estado.jogo; estado.periodo = null; estado.limite = 30; render(); };
@@ -766,9 +809,6 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     var W = Math.max(280, tempoBox.clientWidth || 800), H = 240, esq = 36, base = H - 28, topo = 8;
     var largura = (W - esq) / BALDES.length, barraW = Math.max(2, Math.min(56, largura * 0.72));
     var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "group", "aria-label": tempoSub.textContent });
-    var defs = svgEl("defs", {}), pat = svgEl("pattern", { id: "hachura", width: 8, height: 8, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" });
-    pat.appendChild(svgEl("rect", { "class": "h1", width: 4, height: 8 })); pat.appendChild(svgEl("rect", { "class": "h2", x: 4, width: 4, height: 8 }));
-    defs.appendChild(pat); svg.appendChild(defs);
     var eixo = svgEl("g", { "class": "eixo", "aria-hidden": "true" });
     [0, Math.round(max / 2), max].forEach(function (v, i, arr) {
       if (i === 1 && (v === 0 || v === max)) return;
@@ -795,7 +835,13 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
         if (!c[k]) return;
         var h = (base - topo) * c[k] / max;
         y -= h;
-        g.appendChild(svgEl("rect", { "class": "s-" + k, x: x + (largura - barraW) / 2, y: y, width: barraW, height: Math.max(h, 1) }));
+        var x0 = x + (largura - barraW) / 2, hh = Math.max(h, 1);
+        if (k === "Misto") {   // duas metades sólidas, como no resto do painel
+          g.appendChild(svgEl("rect", { "class": "s-Tecnico", x: x0, y: y, width: barraW / 2, height: hh }));
+          g.appendChild(svgEl("rect", { "class": "s-Afetivo-visual", x: x0 + barraW / 2, y: y, width: barraW / 2, height: hh }));
+        } else {
+          g.appendChild(svgEl("rect", { "class": "s-" + k, x: x0, y: y, width: barraW, height: hh }));
+        }
       });
       var titulo = svgEl("title", {}); titulo.textContent = b.longo + ": " + nReviews(c.total) + (partes.length ? " (" + partes.join(", ") + ")" : ""); g.appendChild(titulo);
       var escolher = function () {
@@ -859,7 +905,7 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
   });
 
   // avaliação
-  var av = D.avaliacao, avBox = document.getElementById("avaliacao");
+  var av = D.avaliacao, avBox = document.getElementById("avaliacao"), botoesCelula = [];
   if (!av) {
     avBox.appendChild(el("div", { classe: "vazio" }, [
       el("p", { texto: "Ainda não há gabarito manual, então não dá para medir acertos e erros do sistema." }),
@@ -880,10 +926,27 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     var tb = el("tbody");
     av.matriz.forEach(function (linha, i) {
       var tr = el("tr", {}, [el("th", { scope: "row", texto: NOMES[D.categorias[i]] })]);
+      var totalLinha = linha.reduce(function (a, b) { return a + b; }, 0);
       linha.forEach(function (v, j) {
         var a = (max && v) ? 0.1 + 0.5 * v / max : 0;
-        tr.appendChild(el("td", { classe: i === j ? "diag" : "", texto: fmt.format(v),
-          style: "background:color-mix(in srgb, " + (i === j ? "var(--tec)" : "var(--afe)") + " " + Math.round(a * 100) + "%, transparent)" }));
+        var conteudo = [fmt.format(v), el("small", { texto: totalLinha ? pct(v, totalLinha) + " da linha" : "" })];
+        var td = el("td", { classe: i === j ? "diag" : "",
+          style: "background:color-mix(in srgb, " + (i === j ? "var(--tec)" : "var(--afe)") + " " + Math.round(a * 100) + "%, transparent)" });
+        if (D.clicavel && v) {
+          var man = D.categorias[i], sis = D.categorias[j];
+          var b = el("button", { classe: "celula-btn num", type: "button", "aria-pressed": "false",
+            "aria-label": "Gabarito " + NOMES[man] + ", sistema " + NOMES[sis] + ": " + nReviews(v) + ". Mostrar na lista." }, conteudo);
+          b.addEventListener("click", function () {
+            estado.celula = (estado.celula && estado.celula.man === man && estado.celula.sis === sis) ? null : { man: man, sis: sis };
+            estado.limite = 30; render();
+            if (estado.celula) document.getElementById("t-rev").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+          });
+          botoesCelula.push([man, sis, b]);
+          td.appendChild(b);
+        } else {
+          conteudo.forEach(function (c) { td.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+        }
+        tr.appendChild(td);
       });
       tb.appendChild(tr);
     });
@@ -900,10 +963,25 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     });
     tmet.appendChild(tb2);
     avBox.appendChild(el("div", { classe: "duas" }, [el("div", { classe: "rolagem" }, [tm]), el("div", { classe: "rolagem" }, [tmet])]));
+    if (D.clicavel) avBox.appendChild(el("p", { classe: "estado", style: "margin-top:var(--e3)", texto: "Clique numa célula da matriz para ver na lista os reviews daquele par gabarito × sistema." }));
   }
 
   // reviews
-  var ordenados = D.reviews.slice().sort(function (x, y) { return (y.et + y.ea) - (x.et + x.ea); });
+  var ORDENS = {
+    indicadores: { rotulo: "os com mais indicadores primeiro", f: function (x, y) { return (y.et + y.ea) - (x.et + x.ea); } },
+    recentes: { rotulo: "os mais recentes primeiro", f: function (x, y) { return x.data < y.data ? 1 : x.data > y.data ? -1 : 0; } },
+    uteis: { rotulo: "os mais votados como úteis primeiro", f: function (x, y) { return (y.util || 0) - (x.util || 0); } }
+  };
+  var selOrdem = document.getElementById("f-ordem");
+  var temData = D.reviews.some(function (r) { return r.data; }), temUtil = D.reviews.some(function (r) { return r.util !== null; });
+  [].slice.call(selOrdem.options).forEach(function (o) {
+    if ((o.value === "recentes" && !temData) || (o.value === "uteis" && !temUtil)) o.remove();
+  });
+  var ordenados = [];
+  var ordenar = function () { ordenados = D.reviews.slice().sort(ORDENS[selOrdem.value].f); };
+  ordenar();
+  selOrdem.addEventListener("change", function () { ordenar(); estado.limite = 30; render(); });
+  document.getElementById("limpar-celula").addEventListener("click", function () { estado.celula = null; estado.limite = 30; render(); });
   var lista = document.getElementById("lista"), info = document.getElementById("estado"), mais = document.getElementById("mais");
   mais.addEventListener("click", function () { estado.limite += 30; render(); });
 
@@ -953,9 +1031,17 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     if (r.it.length) porque.appendChild(el("span", {}, [el("b", { texto: "Indicadores técnicos: " }), r.it.join("; ")]));
     if (r.ia.length) porque.appendChild(el("span", {}, [el("b", { texto: "Indicadores afetivo-visuais: " }), r.ia.join("; ")]));
     var texto = textoMarcado(r, false);
+    var horas = r.horas === null ? null : r.horas.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " h jogadas ao escrever";
+    var util = !r.util ? null : fmt.format(r.util) + (r.util === 1 ? " pessoa achou útil" : " pessoas acharam útil");
     var artigo = el("article", { classe: "review c-" + r.cat }, [
-      el("div", { classe: "cabeca" }, [el("span", { classe: "cat", texto: NOMES[r.cat] }), el("span", { texto: r.jogo }),
-        r.data ? el("span", { classe: "num", texto: r.data.split("-").reverse().join("/") }) : null, rec ? el("span", { texto: rec }) : null]),
+      el("div", { classe: "cabeca" }, [
+        el("span", { classe: "etiqueta c-" + r.cat, texto: NOMES[r.cat] }),
+        r.man ? el("span", { classe: "etiqueta gabarito c-" + r.man, texto: "Gabarito: " + (NOMES[r.man] || r.man) }) : null,
+        el("span", { classe: "jogo-nome", texto: r.jogo }),
+        r.data ? el("span", { classe: "num", texto: r.data.split("-").reverse().join("/") }) : null,
+        rec ? el("span", { texto: rec }) : null,
+        horas ? el("span", { classe: "meta num", texto: horas }) : null,
+        util ? el("span", { classe: "meta num", texto: util }) : null]),
       texto
     ]);
     if (r.texto.length > CURTO) {
@@ -980,9 +1066,17 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     var chip = document.getElementById("chip-periodo");
     chip.hidden = !estado.periodo;
     if (estado.periodo) document.getElementById("chip-texto").textContent = estado.periodo.rotulo;
+    var chipC = document.getElementById("chip-celula");
+    chipC.hidden = !estado.celula;
+    if (estado.celula) document.getElementById("chip-celula-texto").textContent =
+      "gabarito " + NOMES[estado.celula.man] + ", sistema " + NOMES[estado.celula.sis];
+    botoesCelula.forEach(function (p) {
+      p[2].setAttribute("aria-pressed", estado.celula && estado.celula.man === p[0] && estado.celula.sis === p[1] ? "true" : "false");
+    });
     var base = ordenados.filter(function (r) {
       return (!estado.jogo || r.jogo === estado.jogo) && (!estado.busca || r.texto.toLowerCase().indexOf(estado.busca) >= 0) &&
-        (!estado.periodo || (r.data >= estado.periodo.ini && r.data < estado.periodo.fim));
+        (!estado.periodo || (r.data >= estado.periodo.ini && r.data < estado.periodo.fim)) &&
+        (!estado.celula || (r.man === estado.celula.man && r.cat === estado.celula.sis));
     });
     botoesCat.forEach(function (p) {
       var n = p[0] ? base.filter(function (r) { return r.cat === p[0]; }).length : base.length;
@@ -993,8 +1087,8 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     lista.textContent = "";
     filtrados.slice(0, estado.limite).forEach(function (r) { lista.appendChild(cartao(r)); });
     info.textContent = filtrados.length
-      ? "Mostrando " + fmt.format(Math.min(estado.limite, filtrados.length)) + " de " + fmt.format(filtrados.length) + " reviews, os com mais indicadores primeiro."
-      : "Nenhum review com esses filtros. Tente outra categoria, limpe a busca ou o período.";
+      ? "Mostrando " + fmt.format(Math.min(estado.limite, filtrados.length)) + " de " + fmt.format(filtrados.length) + " reviews, " + ORDENS[selOrdem.value].rotulo + "."
+      : "Nenhum review com esses filtros. Tente outra categoria, limpe a busca, o período ou o filtro da matriz.";
     mais.hidden = filtrados.length <= estado.limite;
   }
   render();

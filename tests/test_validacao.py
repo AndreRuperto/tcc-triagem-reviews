@@ -223,8 +223,12 @@ class TestAvaliacao(unittest.TestCase):
                                  "categoria_manual": ["Tecnico", "Indefinido", "Afetivo-visual", "Indefinido"]})
         with tempfile.TemporaryDirectory() as pasta:
             r = avaliacao.avaliar(self.classificados, gabarito, destino=Path(pasta))
-            for nome in ["metricas.csv", "matriz_confusao.csv", "matriz_confusao.png", "divergencias.csv", "resumo.txt"]:
+            for nome in ["metricas.csv", "matriz_confusao.csv", "matriz_confusao.png", "divergencias.csv",
+                         "comparacao.csv", "resumo.txt"]:
                 self.assertTrue((Path(pasta) / nome).exists(), nome)
+            comparacao = pd.read_csv(Path(pasta) / "comparacao.csv", encoding="utf-8-sig", dtype=str)
+            self.assertEqual(list(comparacao.columns), ["id_review", "categoria_manual", "categoria"])
+            self.assertEqual(len(comparacao), 4)
         self.assertEqual(r["acuracia"], 0.75)
         tec = r["por_categoria"].set_index("categoria").loc["Tecnico"]
         self.assertEqual(tec["precisao"], 0.5)
