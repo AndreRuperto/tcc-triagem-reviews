@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-escuro.svg">
+    <img src="assets/logo.svg" alt="Triagem de reviews com IA simbólica" width="360">
+  </picture>
+</p>
+
 # Triagem de reviews de jogos digitais com IA simbólica
 
 **TCC — Ciência da Computação — UDF — 2026/2**

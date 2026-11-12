@@ -20,3 +20,26 @@ TOKENS_ESCURO = """--fundo: #0f1114; --papel: #181b1f; --papel-2: #1d2126; --tin
   --mis: #b89be3; --mis-marca: #2e2442; --ind: #7d848d; --ind-marca: #23272c; --sobre-cor: #0f1114; --bolinha: #b4bac2; --rolagem: #3a4047; --rolagem-forte: #59616b;
   --cabeca: #08090b; --cabeca-tinta: #f4f5f3; --cabeca-suave: #b8bdc4; --cabeca-linha: #2c3137;
   --foco: #8ab4ff; color-scheme: dark;"""
+
+
+# Logo: balao de review com uma linha de texto e o "grifo" dividido em tecnico
+# (azul) e afetivo-visual (laranja), a mesma divisao da barra do painel.
+# Versao inline (no cabecalho escuro): o balao usa currentColor.
+LOGO_SIMBOLO = (
+    '<svg class="marca-simbolo" viewBox="6 8 36 33" width="30" height="28" aria-hidden="true" focusable="false">'
+    '<path d="M14 10h20a6 6 0 0 1 6 6v11a6 6 0 0 1-6 6H20l-7 6v-6.3A6 6 0 0 1 8 27V16a6 6 0 0 1 6-6Z" fill="none" '
+    'stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>'
+    '<path d="M15 18.5h18" stroke="currentColor" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>'
+    '<path class="marca-t" d="M15 25h9" stroke-width="3.5" stroke-linecap="round"/>'
+    '<path class="marca-a" d="M28 25h5" stroke-width="3.5" stroke-linecap="round"/></svg>'
+)
+# Favicon: o mesmo simbolo sobre um quadrado tinta (data URI, o painel funciona offline).
+FAVICON = (
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E"
+    "%3Crect width='48' height='48' rx='12' fill='%2315171a'/%3E"
+    "%3Cpath d='M14 10h20a6 6 0 0 1 6 6v11a6 6 0 0 1-6 6H20l-7 6v-6.3A6 6 0 0 1 8 27V16a6 6 0 0 1 6-6Z' fill='none' "
+    "stroke='%23f4f5f3' stroke-width='3' stroke-linejoin='round'/%3E"
+    "%3Cpath d='M15 18.5h18' stroke='%23f4f5f3' stroke-opacity='.45' stroke-width='3' stroke-linecap='round'/%3E"
+    "%3Cpath d='M15 25h9' stroke='%235b93ea' stroke-width='3.5' stroke-linecap='round'/%3E"
+    "%3Cpath d='M28 25h5' stroke='%23f08a52' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E"
+)

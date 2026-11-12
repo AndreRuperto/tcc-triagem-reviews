@@ -26,7 +26,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.classificador import normalize_text, stem_phrase
-from src.estilo import TOKENS_CLARO, TOKENS_ESCURO
+from src.estilo import FAVICON, LOGO_SIMBOLO, TOKENS_CLARO, TOKENS_ESCURO
 
 CATEGORIAS = ["Tecnico", "Afetivo-visual", "Misto", "Indefinido"]
 LIMITE_TEXTO = 6000
@@ -307,6 +307,8 @@ def montar_html(dados: dict) -> str:
     cabecalho = dados["titulo"] + (", base de conhecimento v" + dados["versao_base"] if dados["versao_base"] else "") + \
         ", gerado em " + dados["gerado"]
     html = (MODELO.replace("__TOKENS_CLARO__", TOKENS_CLARO)
+            .replace("__FAVICON__", FAVICON)
+            .replace("__LOGO__", LOGO_SIMBOLO)
             .replace("__TOKENS_ESCURO__", TOKENS_ESCURO)
             .replace("__CABECALHO_IMPRESSAO__", _string_css(cabecalho)))
     # os dados vao por ultimo: um review que contenha "__TOKENS_CLARO__" nao e substituido
@@ -347,6 +349,7 @@ MODELO = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Triagem de reviews</title>
+<link rel="icon" href="__FAVICON__">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
@@ -397,6 +400,9 @@ p { margin: 0; }
 .cabeca-pagina { background: var(--cabeca); color: var(--cabeca-tinta); padding: var(--e6) 0 var(--e8); }
 .cabeca-pagina .envolve { display: flex; flex-direction: column; gap: var(--e5); }
 .barra-topo { display: flex; flex-wrap: wrap; gap: var(--e3); justify-content: space-between; align-items: center; }
+.marca { display: inline-flex; align-items: center; gap: var(--e3); }
+.marca-simbolo { flex: none; color: var(--cabeca-tinta); }
+.marca-t { stroke: #5b93ea; } .marca-a { stroke: #f08a52; }
 .kicker { font-size: .8125rem; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--cabeca-suave); }
 .contexto { color: var(--cabeca-suave); font-size: 1.0625rem; line-height: 1.55; max-width: 70ch; }
 .ferramentas { display: flex; flex-wrap: wrap; gap: var(--e2); align-items: center; }
@@ -726,6 +732,9 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
   .cabeca-pagina { background: none; color: var(--tinta); padding: 0 0 8pt; margin-bottom: 10pt; border-bottom: 1.5pt solid var(--tinta); }
   .cabeca-pagina .envolve { gap: 5pt; }
   .kicker { font-size: 6.5pt; color: var(--tinta-suave); }
+  .marca { gap: 6pt; }
+  .marca-simbolo { color: var(--tinta); width: 18px; height: 17px; }
+  .marca-t { stroke: var(--tec); } .marca-a { stroke: var(--afe); }
   h1 { font-size: 19pt; line-height: 1.1; max-width: none; }
   .contexto { color: var(--tinta-suave); font-size: 8pt; max-width: none; }
 
@@ -817,7 +826,7 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
 <header class="cabeca-pagina">
   <div class="envolve">
     <div class="barra-topo">
-      <span class="kicker" id="kicker"></span>
+      <span class="marca">__LOGO__<span class="kicker" id="kicker"></span></span>
       <div class="ferramentas" role="toolbar" aria-label="Opções de exibição">
         <button type="button" id="b-apresentacao" aria-pressed="false" aria-keyshortcuts="P" title="Atalho: tecla P">Modo apresentação</button>
         <label>Tema <select id="f-tema">

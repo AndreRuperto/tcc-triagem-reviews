@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Triagem de reviews">
+  <title>Triagem de reviews</title>
+  <!-- favicon / avatar: fundo tinta, balão claro, grifo dividido em técnico (azul) e afetivo-visual (laranja) -->
+  <rect width="48" height="48" rx="12" fill="#15171a"/>
+  <path d="M14 10h20a6 6 0 0 1 6 6v11a6 6 0 0 1-6 6H20l-7 6v-6.3A6 6 0 0 1 8 27V16a6 6 0 0 1 6-6Z" fill="none" stroke="#f4f5f3" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M15 18.5h18" stroke="#f4f5f3" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
+  <path d="M15 25h9" stroke="#5b93ea" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M28 25h5" stroke="#f08a52" stroke-width="3.5" stroke-linecap="round"/>
+</svg>
