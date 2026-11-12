@@ -1,0 +1,155 @@
+# Plano: melhorar o visual do painel
+
+Escrito em 12/11/2026, a partir das telas atuais de
+`reports/steam/painel.html` (399 reviews, 4 jogos) no tema claro, no
+escuro e em 375 px. Nada deste plano foi implementado ainda.
+
+## Para que serve a tela
+
+- **Trabalho principal:** a banca entender, em poucos segundos, o que o
+  sistema encontrou e conseguir conferir por que cada review recebeu a
+  categoria que recebeu.
+- **Quem usa:** a autora, apresentando num projetor ou compartilhando a
+  tela; depois, avaliadores lendo sozinhos no notebook.
+- **Identidade:** o marca-texto sobre o texto do review (ciano =
+  técnico, magenta = afetivo-visual). É o único elemento ousado; o
+  resto deve ficar quieto. As melhorias abaixo reforçam isso, não
+  competem com isso.
+
+## Diagnóstico (o que as telas mostram hoje)
+
+1. **A barra geral esconde o que interessa.** 87,7% é Indefinido
+   (cinza). Afetivo-visual e Misto, o tema do TCC, viram um risco de
+   1 px. O olho vai para o cinza.
+2. **Não há conclusão escrita.** O cabeçalho diz quantos reviews e a
+   versão da base, mas não o achado ("quase 9 em 10 reviews não têm
+   nenhum indicador; 12% são técnicos").
+3. **Falta o tempo.** Review bombing é um fenômeno temporal, e o painel
+   não tem nenhuma linha do tempo, embora o CSV tenha `data_criacao`.
+4. **Falta o cruzamento com a recomendação.** "Recomenda / não
+   recomenda" aparece só em letra pequena em cada review; não há
+   gráfico de categoria × recomendação.
+5. **"Por jogo" são quatro barras quase iguais**, com o percentual
+   repetido em texto corrido à direita. Difícil comparar jogos.
+6. **Lista de indicadores com cauda longa:** muitos itens com valor 1,
+   todos com a mesma barrinha mínima.
+7. **Reviews:** o cabeçalho de cada cartão é pequeno e uniforme; a
+   categoria não se destaca; o hachurado do Misto fica ilegível em
+   tamanhos pequenos (legenda, borda do cartão).
+8. **Matriz de confusão:** só números absolutos; não dá para clicar e
+   ver quais reviews estão em cada célula.
+9. **Sem modo de apresentação.** No projetor a fonte é pequena, e a
+   impressão em PDF (para anexar ao TCC) só esconde os filtros.
+10. **Página inicial do servidor** (`src/servidor.py`) é uma lista
+    crua, sem o estilo do painel.
+11. **Tema** segue só o sistema; num projetor claro com notebook em
+    tema escuro, não há como trocar.
+
+## O que fazer, em ordem de impacto
+
+### Fase 1: a mensagem em 5 segundos
+- **1.1 Frase-achado no topo.** Gerada dos dados em `montar_dados`:
+  "De 399 reviews, 49 (12,3%) têm algum indicador: 47 técnicos,
+  1 afetivo-visual e 1 misto." Em texto grande, com os nomes das
+  categorias marcados com o próprio marca-texto.
+- **1.2 Segunda barra, só dos reviews com indicador.** Abaixo da barra
+  geral, uma barra "entre os 49 com indicador" (Técnico / Afetivo-visual
+  / Misto), ligada visualmente à fatia não cinza da primeira. Assim as
+  categorias raras ficam visíveis sem distorcer a escala da primeira.
+- **1.3 Contexto da coleta no cabeçalho:** período das reviews (menor e
+  maior `data_criacao`), idioma e nome do trabalho. Título passa a ser
+  o do TCC, não "Triagem de reviews".
+
+### Fase 2: os gráficos que faltam
+- **2.1 Linha do tempo.** Reviews por semana (ou mês, conforme o
+  intervalo), empilhadas por categoria, com filtro por jogo. Clicar numa
+  coluna filtra a lista de reviews por aquele período. SVG gerado no
+  JavaScript do próprio arquivo, sem biblioteca.
+- **2.2 Categoria × recomendação.** Para cada categoria, uma barra
+  dividida em "recomenda / não recomenda". Só aparece se o CSV tiver a
+  coluna `recomendado`.
+- **2.3 "Por jogo" como tabela pequena comparável.** Uma linha por
+  jogo, colunas alinhadas: total, % com indicador, técnico,
+  afetivo-visual, misto, % que recomenda; barra fina em cada célula.
+  Ordenável por coluna. Substitui o texto corrido à direita.
+- **2.4 Indicadores:** mostrar os 8 primeiros e um botão "Ver todos
+  (n)"; agrupar os de valor 1 numa linha "outros n indicadores com 1
+  ocorrência".
+
+### Fase 3: a lista de reviews
+- **3.1 Categoria como etiqueta** no canto do cartão (texto + cor de
+  fundo suave), em vez de só negrito no cabeçalho.
+- **3.2 Misto sem hachura:** duas faixas sólidas lado a lado (ciano e
+  magenta) na borda do cartão, na legenda e nas barras estreitas; a
+  hachura fica só em barras largas.
+- **3.3 Ordenação escolhível:** mais indicadores primeiro (atual), mais
+  recentes, mais votadas como úteis (`votos_util`).
+- **3.4 Metadados da Steam no cartão**, quando existirem: horas jogadas
+  na hora da review e votos de utilidade. Pouco tempo de jogo é sinal de
+  review bombing e hoje não aparece.
+- **3.5 Matriz clicável:** clicar numa célula da matriz de confusão
+  filtra a lista pelos reviews daquela célula (precisa incluir
+  `categoria_manual` nos dados do painel quando houver gabarito).
+  Adicionar % por linha abaixo de cada número.
+
+### Fase 4: modo apresentação e PDF
+- **4.1 Botão "Modo apresentação":** aumenta a escala tipográfica
+  (base 20 px), esconde filtros secundários e limita a largura para
+  projetor. Atalho de teclado `P`.
+- **4.2 Seletor de tema** (claro / escuro / sistema), lembrado no
+  navegador. O tema escuro atual não muda; só passa a poder ser forçado.
+- **4.3 Folha de impressão de verdade:** cabeçalho com data e versão da
+  base em cada página, gráficos sem cortes, cores com contraste em
+  impressora P&B (rótulos escritos, que já existem), lista limitada aos
+  reviews filtrados.
+
+### Fase 5: acabamento
+- **5.1 Página inicial do servidor** com os mesmos tokens do painel e,
+  para cada painel, o total de reviews e a data de geração.
+- **5.2 Âncoras e índice:** links no topo para cada seção; a URL guarda
+  o filtro (`#jogo=...&cat=...`), para dar para compartilhar um recorte.
+- **5.3 Estado vazio da avaliação** mais curto, com os dois comandos em
+  blocos copiáveis.
+
+## O que não muda
+- Um arquivo HTML só, offline, sem CDN, sem framework e sem biblioteca
+  de gráficos. A banca pode não ter internet.
+- Texto dos reviews inserido só com `textContent`.
+- Tokens em `:root`, tema escuro por variáveis, nenhum hex solto.
+- Sem animações decorativas; movimento só em resposta a clique, e
+  respeitando `prefers-reduced-motion`.
+- Fora do escopo: editar a base de conhecimento pelo painel, login,
+  banco de dados.
+
+## Como verificar cada fase
+- Screenshots em 1280 px, 375 px, tema claro e escuro, servidos por
+  `docker compose up -d painel` (o arquivo local sempre abre claro).
+- Contraste calculado para cada cor nova: texto ≥ 4,5:1, gráficos e
+  componentes ≥ 3:1. Os valores atuais (6,3:1 a 16,4:1 no claro) são o
+  piso a manter.
+- Alvos de toque ≥ 44 px, tudo operável por teclado, sem rolagem
+  horizontal em 375 px, zoom de 200%.
+- Testes em `tests/test_painel.py` para cada dado novo que
+  `montar_dados` passar a calcular (frase-achado, série temporal,
+  cruzamento com recomendação, células da matriz).
+- Teste do genérico: se trocar o assunto e a tela servir para outro
+  produto sem mudar nada, a fase não está pronta.
+
+## Arquivos envolvidos
+- `src/painel.py`: `montar_dados` (dados novos) e `MODELO` (HTML, CSS e
+  JavaScript).
+- `src/servidor.py`: página inicial (5.1).
+- `tests/test_painel.py`, `tests/test_servidor.py`.
+- `README.md`: seção "Painel de resultados" ao final de cada fase.
+
+## Ordem sugerida e tamanho
+| Fase | O que entrega | Tamanho |
+|---|---|---|
+| 1 | A conclusão legível de longe | pequeno |
+| 2 | Tempo e recomendação, o que o TCC discute | médio |
+| 3 | Conferência dos reviews mais rápida | médio |
+| 4 | Apresentação e anexo em PDF | médio |
+| 5 | Acabamento | pequeno |
+
+As fases 1 e 2 são as que mais mudam o que a banca vê. A fase 3.5
+depende de existir o gabarito manual.

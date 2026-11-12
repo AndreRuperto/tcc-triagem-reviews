@@ -47,6 +47,7 @@ Achados (importantes para a metodologia):
 - [ ] Rotular a amostra (idealmente duas pessoas, para o kappa).
 - [ ] Avaliar: `python -m src.avaliacao --gabarito data/gabarito_rotulado.csv`.
 - [ ] Analisar `reports/avaliacao/divergencias.csv` e ajustar a base só com uma parte do gabarito; medir de novo na parte intocada.
+- [ ] Melhorar o visual do painel conforme `docs/plano_visual_painel.md` (5 fases; nada implementado ainda).
 - [ ] Dicionário de sinônimos (`config/sinonimos.json`) e `docs/decisao_sinonimos.md`.
 
 ## Decisões e problemas conhecidos
