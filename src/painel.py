@@ -1570,15 +1570,20 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
     folha.textContent = "@page { background-color: " + papel + "; @top-left { color: " + suave + "; } @bottom-right { color: " + suave + "; } }";
   }
   pintarFolha();
-  if (window.matchMedia) {
-    var mq = window.matchMedia("(prefers-color-scheme: dark)");
-    var aoMudarSistema = function () {
-      if (mq.matches) document.documentElement.setAttribute("data-sistema", "escuro"); else document.documentElement.removeAttribute("data-sistema");
-      pintarFolha();
-    };
-    if (mq.addEventListener) mq.addEventListener("change", aoMudarSistema); else if (mq.addListener) mq.addListener(aoMudarSistema);
+  // Na impressão o navegador reavalia as media queries como papel, e para papel
+  // prefers-color-scheme é sempre "claro": isso dispara "change" no meio da impressão.
+  // Por isso o tema do sistema só é lido na tela; durante a impressão fica o da tela.
+  var imprimindo = false;
+  var mqImpressao = window.matchMedia ? window.matchMedia("print") : null;
+  var mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function lerSistema() {
+    if (!mq || imprimindo || (mqImpressao && mqImpressao.matches)) return;
+    if (mq.matches) document.documentElement.setAttribute("data-sistema", "escuro"); else document.documentElement.removeAttribute("data-sistema");
+    pintarFolha();
   }
-  window.addEventListener("beforeprint", pintarFolha);
+  if (mq) { if (mq.addEventListener) mq.addEventListener("change", lerSistema); else if (mq.addListener) mq.addListener(lerSistema); }
+  window.addEventListener("beforeprint", function () { imprimindo = true; pintarFolha(); });
+  window.addEventListener("afterprint", function () { imprimindo = false; setTimeout(lerSistema, 0); });
   window.addEventListener("beforeprint", function () { limiteAntes = estado.limite; estado.limite = Infinity; render(); });
   window.addEventListener("afterprint", function () { if (limiteAntes !== null) { estado.limite = limiteAntes; limiteAntes = null; render(); } });
 
