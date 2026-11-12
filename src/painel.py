@@ -324,6 +324,13 @@ MODELO = r"""<!doctype html>
 }
 :root[data-tema="escuro"], :root[data-sistema="escuro"]:not([data-tema="claro"]) { __TOKENS_ESCURO__ }
 * { box-sizing: border-box; }
+/* barras de rolagem finas, arredondadas, nas cores do tema */
+html, .rolagem, .dd-lista, #sec-rev > .margem { scrollbar-width: thin; scrollbar-color: var(--rolagem) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--rolagem); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--rolagem-forte); }
+::-webkit-scrollbar-corner { background: transparent; }
 html { font-size: 100%; }
 body { margin: 0; background: var(--fundo); color: var(--tinta); font: var(--t-0)/1.55 var(--sans); }
 .envolve, main { max-width: var(--largura); margin: 0 auto; padding-left: var(--e6); padding-right: var(--e6); }
@@ -422,8 +429,20 @@ tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
 .tab-legenda td { vertical-align: top; white-space: nowrap; font-family: var(--mono); font-size: .9375rem; }
 
 /* ao longo do tempo */
-.troca { display: inline-flex; gap: var(--e2); align-items: center; min-height: 44px; cursor: pointer; font-size: var(--t-p); }
-.troca input { width: 20px; height: 20px; accent-color: var(--tec); }
+/* interruptor: checkbox de verdade, desenhado como trilho + bolinha */
+.troca { display: inline-flex; gap: var(--e3); align-items: center; min-height: 44px; cursor: pointer; font-size: var(--t-p);
+  padding: 0 var(--e4) 0 var(--e1); border-radius: var(--r-pilula); user-select: none; }
+.troca input { -webkit-appearance: none; appearance: none; flex: none; position: relative; margin: 0; cursor: pointer;
+  width: 40px; height: 24px; border-radius: var(--r-pilula); background: var(--ind-marca); border: 1px solid var(--linha);
+  transition: background-color .18s ease, border-color .18s ease; }
+.troca input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--bolinha); box-shadow: 0 1px 3px rgba(15, 17, 20, .3); transition: transform .18s ease; }
+.troca:hover input { border-color: var(--tinta-suave); }
+.troca input:checked { background: var(--tec); border-color: var(--tec); }
+.troca input:checked::after { transform: translateX(16px); background: var(--sobre-cor); }
+.troca input:focus-visible { outline: 2px solid var(--foco); outline-offset: 3px; }
+.troca:has(input:checked) { color: var(--tinta); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .troca input, .troca input::after { transition: none; } }
 #tempo svg { display: block; width: 100%; height: 240px; overflow: visible; }
 #tempo .eixo text { fill: var(--tinta-suave); font: 12px var(--mono); font-variant-numeric: tabular-nums; }
 #tempo .eixo line { stroke: var(--linha); }
@@ -493,7 +512,8 @@ th[aria-sort] .ordenar { color: var(--tinta); }
 #sec-rev > .margem { background: var(--papel); border: 1px solid var(--linha); border-radius: var(--r-grande); padding: var(--e5); gap: var(--e3); }
 @media (min-width: 960px) {
   #sec-rev { display: grid; grid-template-columns: 19rem minmax(0, 1fr); gap: var(--e5); align-items: start; }
-  #sec-rev > .margem { position: sticky; top: var(--e4); max-height: calc(100vh - 2 * var(--e4)); overflow-y: auto; }
+  #sec-rev > .margem { position: sticky; top: var(--e4); max-height: calc(100vh - 2 * var(--e4)); overflow-y: auto; overflow-x: hidden;
+    scrollbar-gutter: stable; }
 }
 .filtros { display: grid; gap: var(--e3); }
 .filtros label { display: grid; gap: var(--e1); font-size: var(--t-p); color: var(--tinta-suave); }
@@ -508,7 +528,8 @@ select option { color: var(--tinta); background-color: var(--papel); }
 select:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
 .filtros select, .filtros input { width: 100%; min-width: 0; }
 /* dropdown próprio: o <select> fica escondido por baixo e continua sendo a fonte do valor */
-.dd-nativo { position: absolute !important; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden; }
+.dd-nativo, .filtros .dd-nativo { position: absolute !important; width: 1px !important; min-width: 0 !important; height: 1px !important; min-height: 0 !important;
+  padding: 0 !important; margin: 0 !important; border: 0 !important; opacity: 0; pointer-events: none; overflow: hidden; clip-path: inset(50%); }
 .dd { position: relative; display: inline-block; }
 .filtros .dd { display: block; }
 .dd-botao { font: inherit; font-size: var(--t-p); display: inline-flex; align-items: center; justify-content: space-between; gap: var(--e3);
@@ -536,6 +557,8 @@ select:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
 .ferramentas .dd-botao { color: var(--cabeca-tinta); background: transparent; border-color: var(--cabeca-linha); border-radius: var(--r-pilula); }
 .ferramentas .dd-botao:hover { border-color: var(--cabeca-suave); }
 .ferramentas .dd-botao[aria-expanded="true"] { border-color: var(--cabeca-suave); box-shadow: 0 0 0 3px rgba(255, 255, 255, .08); }
+.filtros .dd-lista { right: 0; }
+.filtros .dd-opcao { white-space: normal; }
 .ferramentas .dd-lista { left: auto; right: 0; min-width: 190px; background: #1e2126; color: var(--cabeca-tinta); border-color: var(--cabeca-linha);
   box-shadow: 0 18px 44px rgba(0, 0, 0, .45); }
 .ferramentas .dd-opcao.ativa { background: rgba(255, 255, 255, .08); }
@@ -726,7 +749,7 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
     <div class="margem">
       <h2 id="t-tempo">Ao longo do tempo</h2>
       <p class="sub" id="tempo-sub"></p>
-      <label class="troca"><input type="checkbox" id="so-indicador"> Só reviews com indicador</label>
+      <label class="troca"><input type="checkbox" role="switch" id="so-indicador"> Só reviews com indicador</label>
       <p class="sub">Conta só as reviews coletadas, não todas as dos jogos: a altura das colunas depende de como a coleta foi feita
         (coletar as mais recentes enche os últimos meses).</p>
     </div>
