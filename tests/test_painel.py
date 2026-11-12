@@ -32,6 +32,36 @@ class TestMarcarTrechos(unittest.TestCase):
         self.assertEqual(painel.marcar_trechos("um flagrante", ["lag"], []), [])
 
 
+class TestContaDoCartao(unittest.TestCase):
+    BASE = {"tecnico": {"trava": 2, "bug": 1, "lag": 2}, "afetivo_visual": {"rosto feio": 3}}
+
+    def test_cada_indicador_traz_peso_e_seus_trechos(self):
+        texto = "o mapa trava toda hora e tem bug, e outro bug; rosto feio"
+        trechos = painel.marcar_trechos(texto, ["trava", "bug"], ["rosto feio"])
+        fichas = painel.fichas_da_conta(texto, ["trava", "bug"], ["rosto feio"], trechos, self.BASE)
+        por_nome = {f["n"]: f for f in fichas}
+        self.assertEqual([(f["n"], f["g"], f["p"]) for f in fichas], [("trava", "t", 2), ("bug", "t", 1), ("rosto feio", "a", 3)])
+        self.assertEqual([texto[trechos[i][0]:trechos[i][1]] for i in por_nome["bug"]["m"]], ["bug", "bug"])
+        self.assertEqual([texto[trechos[i][0]:trechos[i][1]] for i in por_nome["trava"]["m"]], ["trava"])
+
+    def test_radical_tira_o_sufixo_e_acha_o_peso(self):
+        texto = "comecou a LAGAR"
+        trechos = painel.marcar_trechos(texto, ["lag (via radical)"], [])
+        f = painel.fichas_da_conta(texto, ["lag (via radical)"], [], trechos, self.BASE)[0]
+        self.assertEqual((f["n"], f["p"], f["r"], f["m"]), ("lag", 2, True, [0]))
+
+    def test_pesos_so_aparecem_quando_a_soma_bate_com_o_escore(self):
+        fichas = [{"n": "trava", "g": "t", "p": 2, "r": False, "m": []}, {"n": "bug", "g": "t", "p": 1, "r": False, "m": []}]
+        self.assertTrue(painel.pesos_conferem(fichas, 3, 0))
+        self.assertFalse(painel.pesos_conferem(fichas, 4, 0))          # base mudou depois da classificacao
+        self.assertFalse(painel.pesos_conferem([dict(fichas[0], p=None)], 2, 0))   # indicador fora da base
+
+    def test_sem_base_nao_inventa_peso(self):
+        texto = "travando"
+        trechos = painel.marcar_trechos(texto, ["travando"], [])
+        self.assertIsNone(painel.fichas_da_conta(texto, ["travando"], [], trechos)[0]["p"])
+
+
 class TestPosicoesNoNavegador(unittest.TestCase):
     def test_emoji_antes_da_marca_nao_desloca(self):
         texto = "😡 pessimo, fecha sozinho"

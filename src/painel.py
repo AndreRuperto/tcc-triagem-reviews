@@ -116,7 +116,39 @@ def _numero(valor, tipo=float):
         return None
 
 
-def montar_dados(classificados: pd.DataFrame, avaliacao: dict = None) -> dict:
+def fichas_da_conta(texto: str, ind_t: list, ind_a: list, trechos: list, base: dict = None) -> list:
+    """
+    Um item por indicador encontrado: nome, grupo ("t"/"a"), peso na base de
+    conhecimento (None se a base nao foi informada ou nao tem o indicador),
+    se casou pelo radical e quais trechos do texto (indices em `trechos`)
+    sao dele. Alimenta a "conta" de cada cartao no painel.
+    """
+    base = base or {}
+    grupos = {"t": base.get("tecnico", {}), "a": base.get("afetivo_visual", {})}
+    inicio_para_indice = {t[0]: i for i, t in enumerate(trechos)}
+    fichas = []
+    for grupo, lista in (("t", ind_t), ("a", ind_a)):
+        for ind in lista:
+            nome = ind.removesuffix(MARCA_RADICAL)
+            proprios = marcar_trechos(texto, [ind], []) if grupo == "t" else marcar_trechos(texto, [], [ind])
+            marcas = sorted({inicio_para_indice[t[0]] for t in proprios if t[0] in inicio_para_indice})
+            peso = grupos[grupo].get(nome)
+            fichas.append({"n": nome, "g": grupo, "p": int(peso) if peso is not None else None,
+                           "r": ind.endswith(MARCA_RADICAL), "m": marcas})
+    return fichas
+
+
+def pesos_conferem(fichas: list, escore_t: int, escore_a: int) -> bool:
+    """True se a soma dos pesos bate com os escores do classificador (base igual a da classificacao)."""
+    if any(f["p"] is None for f in fichas):
+        return False
+    soma = {"t": 0, "a": 0}
+    for f in fichas:
+        soma[f["g"]] += f["p"]
+    return soma["t"] == escore_t and soma["a"] == escore_a
+
+
+def montar_dados(classificados: pd.DataFrame, avaliacao: dict = None, base: dict = None) -> dict:
     avaliacao = dict(avaliacao) if avaliacao else None
     rotulos = avaliacao.pop("rotulos", {}) if avaliacao else {}
     reviews = []
@@ -131,15 +163,21 @@ def montar_dados(classificados: pd.DataFrame, avaliacao: dict = None) -> dict:
                 contagem_ind[grupo][nome] = contagem_ind[grupo].get(nome, 0) + 1
         # linhas em branco repetidas so ocupam espaco na tela
         cortado = re.sub(r"\n\s*\n+", "\n", texto.strip())[:LIMITE_TEXTO]
-        trechos = _para_utf16(cortado, [t for t in marcar_trechos(cortado, ind_t, ind_a) if t[1] <= len(cortado)])
+        trechos_brutos = [t for t in marcar_trechos(cortado, ind_t, ind_a) if t[1] <= len(cortado)]
+        fichas = fichas_da_conta(cortado, ind_t, ind_a, trechos_brutos, base)
+        trechos = _para_utf16(cortado, trechos_brutos)
+        escore_t = int(getattr(linha, "escore_tecnico", 0) or 0)
+        escore_a = int(getattr(linha, "escore_afetivo", 0) or 0)
         reviews.append({
             "id": str(linha.id_review),
             "jogo": str(getattr(linha, "jogo", "") or ""),
             "cat": linha.categoria,
             "regra": getattr(linha, "regra_acionada", ""),
             "conf": float(getattr(linha, "confianca", 0) or 0),
-            "et": int(getattr(linha, "escore_tecnico", 0) or 0),
-            "ea": int(getattr(linha, "escore_afetivo", 0) or 0),
+            "et": escore_t,
+            "ea": escore_a,
+            "fichas": fichas,
+            "pesos_ok": pesos_conferem(fichas, escore_t, escore_a),
             "it": ind_t,
             "ia": ind_a,
             "texto": cortado,
@@ -275,10 +313,21 @@ def montar_html(dados: dict) -> str:
     return html.replace("__DADOS__", _json_seguro(dados))
 
 
+BASE_PADRAO = Path(__file__).resolve().parent.parent / "config" / "base_conhecimento.json"
+
+
+def ler_base(caminho: Path = BASE_PADRAO) -> dict:
+    """Base de conhecimento (para mostrar o peso de cada indicador); vazia se nao existir."""
+    try:
+        return json.loads(Path(caminho).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
 def gerar_painel(pasta: Path, destino: Path = None) -> Path:
     pasta = Path(pasta)
     classificados = pd.read_csv(pasta / "reviews_classificados.csv", encoding="utf-8-sig", dtype={"id_review": str})
-    dados = montar_dados(classificados, ler_avaliacao(pasta / "avaliacao"))
+    dados = montar_dados(classificados, ler_avaliacao(pasta / "avaliacao"), ler_base())
     destino = Path(destino) if destino else pasta / "painel.html"
     destino.write_text(montar_html(dados), encoding="utf-8")
     return destino
@@ -598,6 +647,55 @@ mark.radical { box-shadow: none; text-decoration: underline dotted 2px; text-und
 .porque { font-size: var(--t-p); color: var(--tinta-suave); display: grid; gap: var(--e1); padding-top: var(--e3); border-top: 1px solid var(--linha); }
 .porque b { color: var(--tinta); font-weight: 600; }
 footer { color: var(--tinta-suave); font-size: var(--t-p); }
+/* cartão de review: evidência grifada, a conta e o veredito no fim */
+.review { display: flex; flex-direction: column; gap: 14px; padding: var(--e5) var(--e5) var(--e4); }
+.rv-topo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--e2) var(--e4); }
+.rv-id { display: grid; gap: 2px; min-width: 0; }
+.rv-jogo { display: flex; align-items: center; gap: var(--e2); font-weight: 600; }
+.rv-ponto { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--ind); }
+.c-Tecnico .rv-ponto { background: var(--tec); } .c-Afetivo-visual .rv-ponto { background: var(--afe); } .c-Misto .rv-ponto { background: var(--mis); }
+.rv-meta { display: flex; flex-wrap: wrap; gap: 2px var(--e4); font-size: .8125rem; color: var(--tinta-suave); font-variant-numeric: tabular-nums; padding-left: 17px; }
+.selo-rec { display: inline-flex; align-items: center; gap: 6px; font-size: .8125rem; font-weight: 600; color: var(--tinta-suave);
+  padding: 4px 10px 4px 8px; border: 1px solid var(--linha); border-radius: var(--r-pilula); white-space: nowrap; }
+.selo-rec.sim { color: var(--tinta); }
+.review .texto { margin: 0; }
+.trecho-rotulo { display: inline-block; margin-right: 6px; padding: 0 6px; font-size: .6875rem; font-weight: 600; letter-spacing: .02em;
+  color: var(--tinta-suave); border: 1px solid var(--linha); border-radius: 4px; vertical-align: 2px; }
+.review .ler { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; margin-top: -8px; text-decoration: none; font-weight: 600; }
+.review .ler svg { transition: transform .15s ease; }
+.review .ler[aria-expanded="true"] svg { transform: rotate(180deg); }
+.review .ler:hover { text-decoration: underline; }
+/* a conta */
+.conta { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--linha); }
+.conta-linha { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px var(--e4); }
+.fichas { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ficha { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 10px; font-size: .8125rem; border-radius: var(--r-pequeno);
+  background: var(--tec-marca); border: 1px solid transparent; cursor: default; }
+.ficha b { font-weight: 700; color: var(--tec); font-variant-numeric: tabular-nums; }
+.ficha.g-a { background: var(--afe-marca); } .ficha.g-a b { color: var(--afe); }
+.ficha.radical { background: transparent; border: 1px dashed var(--tec); } .ficha.g-a.radical { border-color: var(--afe); }
+.ficha.radical::after { content: "radical"; font-size: .6875rem; color: var(--tinta-suave); }
+.somas { display: flex; align-items: baseline; gap: var(--e4); font-size: .8125rem; color: var(--tinta-suave); white-space: nowrap; }
+.somas b { font-size: 1.25rem; font-weight: 700; color: var(--tinta); font-variant-numeric: tabular-nums; margin-right: 3px; }
+.somas .s-t b { color: var(--tec); } .somas .s-a b { color: var(--afe); }
+.somas .zero b { color: var(--tinta-suave); font-weight: 500; }
+.somas .igual { font-size: 1rem; color: var(--tinta-suave); }
+.balanca { display: flex; gap: 2px; height: 8px; border-radius: var(--r-pilula); overflow: hidden; background: var(--ind-marca); }
+.balanca span { min-width: 3px; }
+.veredito { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--e3); font-size: .8125rem; color: var(--tinta-suave); }
+.veredito .etiqueta { font-size: .8125rem; padding: 3px 10px; }
+.veredito .conf b { color: var(--tinta); font-variant-numeric: tabular-nums; }
+.sem-indicador { font-size: .8125rem; color: var(--tinta-suave); }
+/* grifo no texto: leve, para o texto continuar fluindo */
+.texto mark { font-weight: inherit; padding: 0; border-radius: 2px; color: inherit; transition: background-color .12s ease; }
+.texto mark.t { background: var(--tec-marca); box-shadow: inset 0 -2px 0 var(--tec); }
+.texto mark.a { background: var(--afe-marca); box-shadow: inset 0 -2px 0 var(--afe); }
+.texto mark.radical { background: transparent; box-shadow: none; text-decoration: underline dotted 2px; text-underline-offset: 4px; }
+.texto mark.t.radical { text-decoration-color: var(--tec); } .texto mark.a.radical { text-decoration-color: var(--afe); }
+.texto mark.aceso.t { background: var(--tec); color: var(--sobre-cor); }
+.texto mark.aceso.a { background: var(--afe); color: var(--sobre-cor); }
+.ficha.aceso { border-color: currentColor; }
+@media (prefers-reduced-motion: reduce) { .review .ler svg, .texto mark { transition: none; } }
 
 @media (max-width: 640px) {
   .envolve, main { padding-left: var(--e4); padding-right: var(--e4); }
@@ -606,6 +704,7 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
   .kpi b { font-size: 2rem; }
   .rec-linha { grid-template-columns: 1fr; gap: var(--e1); }
   .review { padding: var(--e4); }
+  .conta-linha { flex-direction: column; align-items: flex-start; }
   .tab-legenda td { white-space: normal; }
 }
 @media print {
@@ -687,7 +786,20 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
 
   /* reviews: cartões finos, dois por linha não; um embaixo do outro, densos */
   .lista { gap: 5pt; }
-  .review { padding: 6pt 9pt; border: .75pt solid var(--linha); border-radius: 5pt; background: var(--papel-2); }
+  .review { padding: 6pt 9pt; gap: 5pt; border: .75pt solid var(--linha); border-radius: 5pt; background: var(--papel-2); }
+  .rv-meta, .selo-rec, .veredito, .somas, .ficha { font-size: 7pt; }
+  .rv-meta { padding-left: 13px; }
+  .selo-rec { padding: 1pt 6pt; }
+  .conta { display: flex; flex-wrap: wrap; align-items: center; gap: 3pt 10pt; padding-top: 5pt; }
+  .conta-linha { flex: 1 1 60%; gap: 3pt 8pt; }
+  .veredito { order: 2; gap: 3pt 6pt; }
+  .balanca { order: 3; flex-basis: 100%; }
+  .review .texto { margin: 0; }
+  .review .ler { display: none; }
+  .somas b { font-size: 10pt; }
+  .ficha { padding: 1pt 5pt; }
+  .balanca { height: 4pt; }
+  .veredito .etiqueta { font-size: 7pt; padding: 1pt 6pt; }
   .cabeca { font-size: 7pt; gap: 2pt 8pt; }
   .meta { font-size: 6.5pt; }
   .etiqueta { font-size: 6.5pt; padding: 1pt 5pt; border-radius: 3pt; }
@@ -1319,7 +1431,7 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
     r.marcas.forEach(function (m) {
       if (m[1] <= a || m[0] >= b) return;
       if (m[0] > pos) p.appendChild(document.createTextNode(r.texto.slice(pos, m[0])));
-      var mk = el("mark", { classe: m[2] + (m[3] ? " radical" : ""), texto: r.texto.slice(m[0], m[1]) });
+      var mk = el("mark", { classe: m[2] + (m[3] ? " radical" : ""), "data-i": String(r.marcas.indexOf(m)), texto: r.texto.slice(m[0], m[1]) });
       if (m[3]) mk.title = "Encontrado pelo radical da palavra";
       p.appendChild(mk);
       pos = m[1];
@@ -1329,6 +1441,7 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
   function textoMarcado(r, inteiro) {
     var p = el("p", { classe: "texto" });
     var js = janelas(r, inteiro);
+    if (!inteiro && (js.length > 1 || js[0][0] > 0 || js[js.length - 1][1] < r.texto.length)) p.appendChild(el("span", { classe: "trecho-rotulo", texto: "trecho" }));
     js.forEach(function (j, i) {
       if (j[0] > 0) p.appendChild(el("span", { classe: "reticencias", texto: i ? " … " : "… " }));
       escrever(p, r, j[0], j[1]);
@@ -1338,41 +1451,100 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
     return p;
   }
 
+  var ICONE_SIM = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11"/><path d="M15 5.9 14 10h5.8a2 2 0 0 1 1.9 2.6l-2.3 7A2 2 0 0 1 17.5 21H7V10l4-8a3 3 0 0 1 3 3.9Z"/></svg>';
+  var ICONE_NAO = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 14V3"/><path d="M9 18.1 10 14H4.2a2 2 0 0 1-1.9-2.6l2.3-7A2 2 0 0 1 6.5 3H17v11l-4 8a3 3 0 0 1-3-3.9Z"/></svg>';
+  var ICONE_ABRIR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  var pctConf = function (c) { return Math.round(c * 100) + "%"; };
+
+  function aConta(r, artigo) {
+    var conta = el("div", { classe: "conta" });
+    if (!r.fichas.length) {
+      conta.appendChild(el("p", { classe: "sem-indicador", texto: "Nenhuma expressão da base de conhecimento aparece no texto." }));
+    } else {
+      var fichas = el("ul", { classe: "fichas", "aria-label": "Indicadores encontrados" });
+      r.fichas.forEach(function (f, k) {
+        var peso = r.pesos_ok && f.p !== null ? el("b", { texto: "+" + f.p }) : null;
+        var li = el("li", { classe: "ficha g-" + f.g + (f.r ? " radical" : ""), "data-ficha": String(k) }, [el("span", { texto: f.n }), peso]);
+        li.title = (f.g === "t" ? "Indicador técnico" : "Indicador afetivo-visual") + (f.r ? ", encontrado pelo radical" : "") +
+          (r.pesos_ok && f.p !== null ? ", peso " + f.p : "");
+        // passar o mouse acende os trechos do texto que vieram deste indicador
+        li.addEventListener("mouseenter", function () { acender(artigo, k, true); });
+        li.addEventListener("mouseleave", function () { acender(artigo, k, false); });
+        fichas.appendChild(li);
+      });
+      var somas = el("div", { classe: "somas" }, [
+        el("span", { classe: "igual", "aria-hidden": "true", texto: "=" }),
+        el("span", { classe: "s-t" + (r.et ? "" : " zero") }, [el("b", { texto: fmt.format(r.et) }), "técnico"]),
+        el("span", { classe: "s-a" + (r.ea ? "" : " zero") }, [el("b", { texto: fmt.format(r.ea) }), "afetivo-visual"])
+      ]);
+      conta.appendChild(el("div", { classe: "conta-linha" }, [fichas, somas]));
+      var balanca = el("div", { classe: "balanca", role: "img",
+        "aria-label": "Escore técnico " + r.et + ", afetivo-visual " + r.ea + ", confiança " + pctConf(r.conf) });
+      if (r.et) balanca.appendChild(el("span", { classe: "f-Tecnico", style: "flex:" + r.et }));
+      if (r.ea) balanca.appendChild(el("span", { classe: "f-Afetivo-visual", style: "flex:" + r.ea }));
+      conta.appendChild(balanca);
+    }
+    conta.appendChild(el("div", { classe: "veredito" }, [
+      el("span", { classe: "etiqueta c-" + r.cat, texto: NOMES[r.cat] }),
+      el("span", { texto: "pela regra " + r.regra }),
+      r.fichas.length ? el("span", { classe: "conf" }, ["confiança ", el("b", { texto: pctConf(r.conf) })]) : null,
+      r.man ? el("span", { classe: "etiqueta gabarito c-" + r.man, texto: "Gabarito: " + (NOMES[r.man] || r.man) }) : null
+    ]));
+    return conta;
+  }
+  function acender(artigo, k, ligar) {
+    [].slice.call(artigo.querySelectorAll('mark[data-ficha~="' + k + '"], .ficha[data-ficha="' + k + '"]')).forEach(function (m) {
+      m.classList.toggle("aceso", ligar);
+    });
+  }
+  // índice do trecho -> fichas que o produziram (para acender pelo indicador)
+  function marcarFichas(r, p) {
+    var dono = {};
+    r.fichas.forEach(function (f, k) { f.m.forEach(function (i) { (dono[i] = dono[i] || []).push(k); }); });
+    [].slice.call(p.querySelectorAll("mark[data-i]")).forEach(function (mk) {
+      var d = dono[mk.getAttribute("data-i")];
+      if (d) mk.setAttribute("data-ficha", d.join(" "));
+    });
+  }
+
   function cartao(r) {
-    var rec = r.rec === "sim" ? "Recomenda o jogo" : r.rec === "nao" ? "Não recomenda o jogo" : "";
-    var porque = el("div", { classe: "porque" }, [
-      el("span", {}, [el("b", { texto: "Regra " + r.regra + ": " }),
-        "escore técnico " + r.et + ", afetivo-visual " + r.ea + ", confiança " + r.conf.toLocaleString("pt-BR", { maximumFractionDigits: 2 })])
-    ]);
-    if (r.it.length) porque.appendChild(el("span", {}, [el("b", { texto: "Indicadores técnicos: " }), r.it.join("; ")]));
-    if (r.ia.length) porque.appendChild(el("span", {}, [el("b", { texto: "Indicadores afetivo-visuais: " }), r.ia.join("; ")]));
-    var texto = textoMarcado(r, false);
-    var horas = r.horas === null ? null : r.horas.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " h jogadas ao escrever";
+    var rec = r.rec === "sim" ? "Recomenda" : r.rec === "nao" ? "Não recomenda" : "";
+    var horas = r.horas === null ? null : r.horas.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " h jogadas";
     var util = !r.util ? null : fmt.format(r.util) + (r.util === 1 ? " pessoa achou útil" : " pessoas acharam útil");
-    var artigo = el("article", { classe: "review c-" + r.cat }, [
-      el("div", { classe: "cabeca" }, [
-        el("span", { classe: "etiqueta c-" + r.cat, texto: NOMES[r.cat] }),
-        r.man ? el("span", { classe: "etiqueta gabarito c-" + r.man, texto: "Gabarito: " + (NOMES[r.man] || r.man) }) : null,
-        el("span", { classe: "jogo-nome", texto: r.jogo }),
-        r.data ? el("span", { classe: "num", texto: r.data.split("-").reverse().join("/") }) : null,
-        rec ? el("span", { texto: rec }) : null,
-        horas ? el("span", { classe: "meta num", texto: horas }) : null,
-        util ? el("span", { classe: "meta num", texto: util }) : null]),
-      texto
-    ]);
+    var selo = null;
+    if (rec) {
+      selo = el("span", { classe: "selo-rec " + (r.rec === "sim" ? "sim" : "nao"), texto: rec });
+      selo.insertAdjacentHTML("afterbegin", r.rec === "sim" ? ICONE_SIM : ICONE_NAO);
+    }
+    var artigo = el("article", { classe: "review c-" + r.cat });
+    var texto = textoMarcado(r, false);
+    marcarFichas(r, texto);
+    artigo.appendChild(el("div", { classe: "rv-topo" }, [
+      el("div", { classe: "rv-id" }, [
+        el("div", { classe: "rv-jogo" }, [el("span", { classe: "rv-ponto", "aria-hidden": "true" }), el("span", { classe: "jogo-nome", texto: r.jogo })]),
+        el("div", { classe: "rv-meta" }, [
+          r.data ? el("span", { texto: r.data.split("-").reverse().join("/") }) : null,
+          horas ? el("span", { texto: horas }) : null,
+          util ? el("span", { texto: util }) : null])
+      ]),
+      selo
+    ]));
+    artigo.appendChild(texto);
     if (r.texto.length > CURTO) {
       var aberto = false;
-      var botao = el("button", { classe: "ler", type: "button", "aria-expanded": "false", texto: "Ler o review inteiro" });
+      var botao = el("button", { classe: "ler", type: "button", "aria-expanded": "false" }, [el("span", { texto: "Ler o review inteiro" })]);
+      botao.insertAdjacentHTML("beforeend", ICONE_ABRIR);
       botao.addEventListener("click", function () {
         aberto = !aberto;
         var novo = textoMarcado(r, aberto);
+        marcarFichas(r, novo);
         artigo.replaceChild(novo, texto); texto = novo;
         botao.setAttribute("aria-expanded", aberto ? "true" : "false");
-        botao.textContent = aberto ? "Mostrar só o trecho" : "Ler o review inteiro";
+        botao.firstChild.textContent = aberto ? "Mostrar só o trecho" : "Ler o review inteiro";
       });
       artigo.appendChild(botao);
     }
-    artigo.appendChild(porque);
+    artigo.appendChild(aConta(r, artigo));
     return artigo;
   }
 

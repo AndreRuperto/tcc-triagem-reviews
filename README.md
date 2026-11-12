@@ -149,7 +149,9 @@ Cada classificação gera um `painel.html` na pasta de relatórios (por exemplo
 `reports/steam/painel.html`). É um arquivo só, que abre offline em qualquer navegador.
 Ele mostra a divisão por categoria e por jogo, os indicadores mais acionados, a matriz de
 confusão (depois da avaliação) e cada review com os indicadores marcados no próprio
-texto, para auditar a classificação a olho.
+texto, para auditar a classificação a olho. No fim de cada cartão fica a conta: cada indicador com o
+seu peso na base (`trava +2`, `bug +1`), a soma de cada grupo, a barra técnico × afetivo-visual (a
+confiança) e o veredito com a regra aplicada. Passar o mouse num indicador acende o trecho dele no texto.
 
 - **Modo apresentação** (tecla `P`, `Esc` sai): letra maior para projetor.
 - **Tema**: do sistema, claro ou escuro.
