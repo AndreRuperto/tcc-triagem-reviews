@@ -12,6 +12,8 @@ Toda classificação é rastreável: o sistema registra quais indicadores encont
 escores de cada grupo, a regra aplicada e a confiança. Não há aprendizado de máquina
 envolvido (justificativa em [docs/decisao_ia.md](docs/decisao_ia.md)).
 
+**Painel online:** https://painel-production-fb888da8.up.railway.app (Railway, deploy automático a cada push na `main`)
+
 **Sumário:** [Como funciona](#como-funciona) · [Executar](#como-executar) ·
 [Validação](#fluxo-de-validação) · [Painel](#painel-de-resultados) ·
 [Resultados](#primeira-coleta-real) · [Estrutura](#estrutura) ·
@@ -159,6 +161,13 @@ Para gerar o painel de novo sem reclassificar:
 ```bash
 python -m src.painel --pasta reports/steam
 ```
+
+### Online (Railway)
+
+O serviço `painel` do projeto `tcc-triagem-reviews` no Railway faz o build pelo
+`Dockerfile` a cada push na `main` e roda `python -m src.servidor --endereco 0.0.0.0`.
+A porta vem da variável `PORT`. O painel lá é público: qualquer pessoa com o link vê os
+reviews coletados (textos públicos da Steam, sem o steamid).
 
 ### Abrir numa porta local
 

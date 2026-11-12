@@ -31,6 +31,8 @@ Achados (importantes para a metodologia):
 - Spider-Man 2 no mês do lançamento no PC (fev/2025): 12 de 100 reviews citam MJ/woke/aparência, quase sempre o papel dela na história, não o rosto.
 - Os CSVs coletados estão versionados em `data/steam_*.csv` (textos públicos da Steam, sem o steamid).
 
+- 12/11/2026: painel publicado no Railway (projeto `tcc-triagem-reviews`, serviço `painel`): https://painel-production-fb888da8.up.railway.app. Deploy automático a cada push na `main` do fork.
+
 ## Estado atual
 - **Funciona e foi testado:** os 60 testes no Python local; a imagem Docker x86 foi reconstruída e o serviço `painel` respondeu em http://localhost:8090; coleta real pela API nova da Steam; fluxo completo pela linha de comando com dados de exemplo.
 - **Não testado:**
