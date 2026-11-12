@@ -304,7 +304,10 @@ MODELO = r"""<!doctype html>
 <script>
   // tema escolhido antes (claro/escuro), aplicado já no carregamento para não piscar
   try { var t = localStorage.getItem("painel-tema"); if (t === "claro" || t === "escuro") document.documentElement.setAttribute("data-tema", t); } catch (e) {}
+  // o tema do sistema também vira atributo: na impressão o navegador sempre diz "claro"
+  try { if (window.matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.setAttribute("data-sistema", "escuro"); } catch (e) {}
 </script>
+<style id="estilo-folha"></style>
 <style>
 :root {
   __TOKENS_CLARO__
@@ -319,7 +322,7 @@ MODELO = r"""<!doctype html>
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) { __TOKENS_ESCURO__ }
 }
-:root[data-tema="escuro"] { __TOKENS_ESCURO__ }
+:root[data-tema="escuro"], :root[data-sistema="escuro"]:not([data-tema="claro"]) { __TOKENS_ESCURO__ }
 * { box-sizing: border-box; }
 html { font-size: 100%; }
 body { margin: 0; background: var(--fundo); color: var(--tinta); font: var(--t-0)/1.55 var(--sans); }
@@ -504,6 +507,40 @@ select { -webkit-appearance: none; appearance: none; cursor: pointer; padding-ri
 select option { color: var(--tinta); background-color: var(--papel); }
 select:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
 .filtros select, .filtros input { width: 100%; min-width: 0; }
+/* dropdown próprio: o <select> fica escondido por baixo e continua sendo a fonte do valor */
+.dd-nativo { position: absolute !important; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden; }
+.dd { position: relative; display: inline-block; }
+.filtros .dd { display: block; }
+.dd-botao { font: inherit; font-size: var(--t-p); display: inline-flex; align-items: center; justify-content: space-between; gap: var(--e3);
+  min-height: 44px; padding: var(--e2) var(--e3) var(--e2) var(--e4); cursor: pointer; text-align: left;
+  color: var(--tinta); background: var(--papel); border: 1px solid var(--linha); border-radius: var(--r-pequeno); }
+.filtros .dd-botao { width: 100%; }
+.dd-botao:hover { border-color: var(--tinta-suave); }
+.dd-botao[aria-expanded="true"] { border-color: var(--tec); box-shadow: 0 0 0 3px var(--tec-marca); }
+.dd-botao:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+.dd-seta { flex: none; transition: transform .15s ease; opacity: .8; }
+.dd-botao[aria-expanded="true"] .dd-seta { transform: rotate(180deg); }
+.dd-valor { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-lista { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 100%; max-height: 320px; overflow-y: auto;
+  margin: 0; padding: 6px; list-style: none; background: var(--papel); color: var(--tinta);
+  border: 1px solid var(--linha); border-radius: var(--r-medio); box-shadow: 0 16px 40px rgba(15, 17, 20, .16), 0 2px 6px rgba(15, 17, 20, .08); }
+.dd-lista[hidden] { display: none; }
+.dd-lista:focus { outline: none; }
+.dd-opcao { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: var(--e2) var(--e3) var(--e2) 10px;
+  border-radius: 8px; cursor: pointer; font-size: var(--t-p); white-space: nowrap; }
+.dd-opcao.ativa { background: var(--fundo); }
+.dd-opcao[aria-selected="true"] { font-weight: 600; }
+.dd-check { flex: none; visibility: hidden; color: var(--tec); }
+.dd-opcao[aria-selected="true"] .dd-check { visibility: visible; }
+/* no cabeçalho: pílula transparente e menu escuro */
+.ferramentas .dd-botao { color: var(--cabeca-tinta); background: transparent; border-color: var(--cabeca-linha); border-radius: var(--r-pilula); }
+.ferramentas .dd-botao:hover { border-color: var(--cabeca-suave); }
+.ferramentas .dd-botao[aria-expanded="true"] { border-color: var(--cabeca-suave); box-shadow: 0 0 0 3px rgba(255, 255, 255, .08); }
+.ferramentas .dd-lista { left: auto; right: 0; min-width: 190px; background: #1e2126; color: var(--cabeca-tinta); border-color: var(--cabeca-linha);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .45); }
+.ferramentas .dd-opcao.ativa { background: rgba(255, 255, 255, .08); }
+.ferramentas .dd-check { color: var(--cabeca-tinta); }
+@media (prefers-reduced-motion: reduce) { .dd-seta { transition: none; } }
 .cats { display: flex; flex-wrap: wrap; gap: var(--e1); }
 .cats button { font: inherit; font-size: var(--t-p); color: var(--tinta); background: var(--papel); border: 1px solid var(--linha);
   border-radius: var(--r-pilula); padding: var(--e2) var(--e3); min-height: 44px; cursor: pointer; }
@@ -549,32 +586,95 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
   .tab-legenda td { white-space: normal; }
 }
 @media print {
-  /* impressão sai sempre no tema claro, sem a faixa escura */
-  :root, :root[data-tema] { __TOKENS_CLARO__ }
+  /* o PDF segue o tema que está na tela (claro, escuro ou o do sistema),
+     com tipografia e espaçamento próprios para papel A4 */
   @page {
-    margin: 18mm 14mm;
-    @top-left { content: __CABECALHO_IMPRESSAO__; font: 8pt system-ui, sans-serif; color: #4b5159; }
-    @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 8pt system-ui, sans-serif; color: #4b5159; }
+    size: A4;
+    margin: 15mm 14mm 16mm;
+    @top-left { content: __CABECALHO_IMPRESSAO__; font: 7pt "IBM Plex Sans", system-ui, sans-serif; color: var(--tinta-suave); }
+    @bottom-right { content: counter(page) " / " counter(pages); font: 7pt "IBM Plex Mono", ui-monospace, monospace; color: var(--tinta-suave); }
   }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  html, html.apresentacao { font-size: 11pt; }
-  body { background: #fff; }
-  .cabeca-pagina { background: none; color: var(--tinta); padding: 0 0 var(--e4); }
-  .kicker, .contexto { color: var(--tinta-suave); }
-  .envolve, main, html.apresentacao main { max-width: none; padding: 0; margin-top: 0; }
-  section, #sec-rev, #sec-rev > .margem { display: block; border: 0; padding: 0; margin-top: var(--e5); background: none; }
-  .ferramentas, .filtros, .cats, .mais, .ler, .troca, #limpar-periodo, #limpar-celula, .so-tela, #estado, .indice, .comando button { display: none !important; }
-  h2 { break-after: avoid; margin-bottom: var(--e3); }
-  main > section:not([aria-labelledby="t-rev"]) { break-inside: avoid; }
-  .instrucao { display: none !important; }
-  .so-impressao { display: block; color: var(--tinta-suave); margin-bottom: var(--e3); }
-  .barra, .kpis, .tab-legenda tr, #tempo, .tab-jogos tr, .rec-linha, .ind-lista li, .matriz, .placar, .review, .vazio { break-inside: avoid; }
-  .rolagem { overflow: visible; }
-  .tab-jogos { min-width: 0; }
-  .jogo-btn, .ordenar, .celula-btn { border: 0; padding: 0; min-height: 0; background: none; box-shadow: none; }
+  html, html.apresentacao { font-size: 9pt; background: var(--papel); }
+  body { background: var(--papel); line-height: 1.45; }
+  .envolve, main, html.apresentacao main { max-width: none; padding: 0; margin: 0; }
+  main { display: block; }
+
+  /* cabeçalho: bloco compacto, sem a faixa escura */
+  .cabeca-pagina { background: none; color: var(--tinta); padding: 0 0 8pt; margin-bottom: 10pt; border-bottom: 1.5pt solid var(--tinta); }
+  .cabeca-pagina .envolve { gap: 5pt; }
+  .kicker { font-size: 6.5pt; color: var(--tinta-suave); }
+  h1 { font-size: 19pt; line-height: 1.1; max-width: none; }
+  .contexto { color: var(--tinta-suave); font-size: 8pt; max-width: none; }
+
+  /* seções: fluxo contínuo separado por fios, sem cartões */
+  section, #sec-rev, #sec-rev > .margem { display: block; background: none; border: 0; border-radius: 0; padding: 0; box-shadow: none; position: static; max-height: none; overflow: visible; }
+  section { margin: 0 0 12pt; padding-top: 9pt; border-top: .75pt solid var(--linha); }
+  #sec-geral { border-top: 0; padding-top: 0; }
+  section > * + *, .margem > * + * { margin-top: 5pt; }
+  h2 { font-size: 11.5pt; break-after: avoid; }
+  h3 { font-size: 9.5pt; margin-bottom: 4pt; }
+  .sub { font-size: 7.5pt; max-width: none; }
+  .instrucao, .dd, .ferramentas, .filtros, .cats, .mais, .ler, .troca, #limpar-periodo, #limpar-celula, .so-tela, #estado, .indice, .comando button { display: none !important; }
+  .so-impressao { display: block; color: var(--tinta-suave); font-size: 7.5pt; margin-bottom: 5pt; }
+
+  /* visão geral */
+  .achado { font-size: 12pt; line-height: 1.3; max-width: none; }
+  .kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5pt; margin-top: 8pt; }
+  .kpi { padding: 6pt 8pt; gap: 2pt; border-radius: 5pt; }
+  .kpi .rotulo-cat { font-size: 7pt; }
+  .kpi b { font-size: 16pt; }
+  .kpi small { font-size: 6.5pt; }
+  .barra { height: 8pt; gap: 1.5pt; }
+  .barra.grande { height: 10pt; }
+  .funil { height: 14pt; }
+  .zoom-titulo { font-size: 7.5pt; margin-top: 3pt !important; }
+
+  /* tabelas densas */
+  th, td { padding: 3pt 6pt; }
+  thead th, .ordenar { font-size: 6.5pt; }
+  .tab-legenda { margin-top: 6pt; }
+  .tab-legenda td { font-size: 8pt; white-space: nowrap; }
+  .tab-legenda .desc { font-size: 7pt; }
+  .tab-legenda .cor { width: 8pt; height: 8pt; }
+  .tab-jogos { min-width: 0; font-size: 8pt; }
+  .tab-jogos td { padding-top: 4pt; padding-bottom: 4pt; }
+  .celula small { font-size: 6.5pt; }
+  .mini { width: 44pt; height: 3pt; }
+  .jogo-btn, .ordenar, .celula-btn { border: 0; padding: 0; margin: 0; min-height: 0; background: none; box-shadow: none; }
   .ordenar::after { content: none !important; }
-  .review { border: 1px solid #d0d4d0; margin-bottom: var(--e2); }
-  #tempo svg { height: 200px; }
+  .rolagem { overflow: visible; }
+
+  /* gráficos */
+  #tempo svg { height: 130px; }
+  #tempo .eixo text { font-size: 9px; }
+  .rec-lista { gap: 4pt; }
+  .rec-linha { grid-template-columns: 34mm 1fr 32mm; gap: 6pt; }
+  .rec-linha .barra { height: 6pt; }
+  .rec-linha .conta, .rec-linha small { font-size: 7.5pt; }
+  .duas { gap: 12pt; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ind-lista { gap: 3pt; }
+  .ind-lista li { font-size: 8pt; gap: 6pt; }
+  .ind-lista .trilho { height: 5pt; }
+  .placar { gap: 6pt; margin-bottom: 6pt; }
+  .placar div { padding: 5pt 8pt; min-width: 0; background: var(--papel-2); }
+  .placar div b { font-size: 13pt; }
+  .vazio { padding: 8pt; font-size: 8pt; border-radius: 5pt; }
+  .comando code { font-size: 7pt; padding: 2pt 4pt; }
+
+  /* reviews: cartões finos, dois por linha não; um embaixo do outro, densos */
+  .lista { gap: 5pt; }
+  .review { padding: 6pt 9pt; border: .75pt solid var(--linha); border-radius: 5pt; background: var(--papel-2); }
+  .cabeca { font-size: 7pt; gap: 2pt 8pt; }
+  .meta { font-size: 6.5pt; }
+  .etiqueta { font-size: 6.5pt; padding: 1pt 5pt; border-radius: 3pt; }
+  .texto { font-size: 8.5pt; line-height: 1.45; margin: 4pt 0; max-width: none; }
+  .porque { font-size: 7pt; gap: 1pt; padding-top: 4pt; }
+  footer { font-size: 7pt; margin-top: 8pt; }
+
+  /* quebras: só os blocos pequenos ficam inteiros; as seções podem continuar na página seguinte */
+  .kpis, .barra, #zoom, .tab-legenda tr, #tempo, .tab-jogos tr, .rec-linha, .ind-lista li, .matriz, .placar, .review, .vazio { break-inside: avoid; }
+  .margem, h2, h3 { break-after: avoid; }
 }
 </style>
 </head>
@@ -1354,6 +1454,7 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
   document.addEventListener("keydown", function (ev) {
     var alvo = ev.target && ev.target.tagName;
     if (ev.ctrlKey || ev.metaKey || ev.altKey || alvo === "INPUT" || alvo === "SELECT" || alvo === "TEXTAREA") return;
+    if (ev.target.closest && ev.target.closest(".dd")) return;
     if (ev.key === "p" || ev.key === "P") { ev.preventDefault(); apresentacao(!raizHtml.classList.contains("apresentacao")); }
     else if (ev.key === "Escape" && raizHtml.classList.contains("apresentacao")) apresentacao(false);
   });
@@ -1362,10 +1463,122 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
   selTema.addEventListener("change", function () {
     if (selTema.value) raizHtml.setAttribute("data-tema", selTema.value); else raizHtml.removeAttribute("data-tema");
     try { if (selTema.value) localStorage.setItem("painel-tema", selTema.value); else localStorage.removeItem("painel-tema"); } catch (e) {}
+    if (typeof pintarFolha === "function") pintarFolha();
   });
+  // dropdowns próprios (a lista nativa do <select> não aceita estilo). O <select> continua
+  // no lugar, escondido: os filtros leem e mudam o valor dele como antes, e o dropdown espelha.
+  var SETA = '<svg class="dd-seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  var CHECK = '<svg class="dd-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  var abertos = [];
+  function fecharTodos() { abertos.slice().forEach(function (f) { f(false); }); }
+  function dropdown(sel) {
+    var id = sel.id, caixa = el("div", { classe: "dd" });
+    var botao = el("button", { type: "button", classe: "dd-botao", id: id + "-botao", "aria-haspopup": "listbox", "aria-expanded": "false", "aria-controls": id + "-lista" });
+    var valor = el("span", { classe: "dd-valor" });
+    botao.appendChild(valor); botao.insertAdjacentHTML("beforeend", SETA);
+    var lista = el("ul", { classe: "dd-lista", id: id + "-lista", role: "listbox", tabindex: "-1", hidden: "" });
+    var rotulo = sel.closest("label"), nome = "";
+    if (rotulo) {   // nome acessível: o texto do rótulo ("Tema", "Jogo", "Ordenar por")
+      nome = [].slice.call(rotulo.childNodes).filter(function (n) { return n.nodeType === 3; })
+        .map(function (n) { return n.textContent.trim(); }).join(" ").trim();
+      lista.setAttribute("aria-label", nome);
+    }
+    caixa.appendChild(botao); caixa.appendChild(lista);
+    sel.parentNode.insertBefore(caixa, sel);   // antes do select: o clique no rótulo vai para o botão
+    sel.classList.add("dd-nativo"); sel.setAttribute("tabindex", "-1"); sel.setAttribute("aria-hidden", "true");
+    var ativo = -1;
+    function opcoes() { return [].slice.call(lista.children); }
+    function atualizar() {
+      var o = sel.options[sel.selectedIndex];
+      valor.textContent = o ? o.textContent : "";
+      if (nome) botao.setAttribute("aria-label", nome + ": " + valor.textContent);
+    }
+    function marcar(i) {
+      var ops = opcoes(); if (!ops.length) return;
+      ativo = Math.max(0, Math.min(ops.length - 1, i));
+      ops.forEach(function (li, k) { li.classList.toggle("ativa", k === ativo); });
+      lista.setAttribute("aria-activedescendant", ops[ativo].id);
+      ops[ativo].scrollIntoView({ block: "nearest" });
+    }
+    function montar() {
+      lista.textContent = "";
+      [].slice.call(sel.options).forEach(function (o, k) {
+        var li = el("li", { classe: "dd-opcao", role: "option", id: id + "-op-" + k, "aria-selected": String(k === sel.selectedIndex) });
+        li.insertAdjacentHTML("afterbegin", CHECK);
+        li.appendChild(el("span", { texto: o.textContent }));
+        li.addEventListener("mousemove", function () { if (ativo !== k) marcar(k); });
+        li.addEventListener("click", function (ev) { ev.preventDefault(); escolher(k); });   // sem isso o <label> reabre a lista
+        lista.appendChild(li);
+      });
+    }
+    function fechar(devolverFoco) {
+      if (lista.hidden) return;
+      lista.hidden = true; botao.setAttribute("aria-expanded", "false"); lista.removeAttribute("aria-activedescendant");
+      abertos = abertos.filter(function (f) { return f !== fechar; });
+      if (devolverFoco) botao.focus();
+    }
+    function abrir() {
+      fecharTodos();
+      montar(); lista.hidden = false; botao.setAttribute("aria-expanded", "true");
+      abertos.push(fechar); marcar(sel.selectedIndex); lista.focus();
+    }
+    function escolher(k) {
+      var mudou = k !== sel.selectedIndex;
+      sel.selectedIndex = k; atualizar(); fechar(true);
+      if (mudou) sel.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    lista.addEventListener("click", function (ev) { ev.preventDefault(); });
+    botao.addEventListener("click", function () { if (lista.hidden) abrir(); else fechar(true); });
+    botao.addEventListener("keydown", function (ev) {
+      if (ev.key === "ArrowDown" || ev.key === "ArrowUp") { ev.preventDefault(); abrir(); }
+    });
+    lista.addEventListener("keydown", function (ev) {
+      var n = opcoes().length;
+      if (ev.key === "ArrowDown") { ev.preventDefault(); marcar(ativo + 1); }
+      else if (ev.key === "ArrowUp") { ev.preventDefault(); marcar(ativo - 1); }
+      else if (ev.key === "Home") { ev.preventDefault(); marcar(0); }
+      else if (ev.key === "End") { ev.preventDefault(); marcar(n - 1); }
+      else if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); if (ativo >= 0) escolher(ativo); }
+      else if (ev.key === "Escape") { ev.preventDefault(); fechar(true); }
+      else if (ev.key === "Tab") { fechar(false); }
+      else if (ev.key.length === 1) {   // pula para a opção que começa com a letra
+        var ops = opcoes(), letra = ev.key.toLowerCase();
+        for (var d = 1; d <= n; d++) {
+          var k = (ativo + d) % n;
+          if (ops[k].textContent.trim().toLowerCase().indexOf(letra) === 0) { marcar(k); break; }
+        }
+      }
+    });
+    // valor mudado por código (clique num jogo, filtro vindo da URL) também aparece no botão
+    var desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+    Object.defineProperty(sel, "value", { configurable: true,
+      get: function () { return desc.get.call(sel); },
+      set: function (v) { desc.set.call(sel, v); atualizar(); } });
+    sel.addEventListener("change", atualizar);
+    atualizar();
+  }
+  document.addEventListener("mousedown", function (ev) { if (!ev.target.closest || !ev.target.closest(".dd")) fecharTodos(); });
+  [selTema, selJogo, selOrdem].forEach(dropdown);
   document.getElementById("b-imprimir").addEventListener("click", function () { window.print(); });
   // na impressão sai a lista filtrada inteira, não só os 30 primeiros
   var limiteAntes = null;
+  // folha do PDF na cor do tema atual (inclusive as margens): @page não lê variáveis CSS
+  var folha = document.getElementById("estilo-folha");
+  function pintarFolha() {
+    var cs = getComputedStyle(document.documentElement);
+    var papel = cs.getPropertyValue("--papel").trim() || "#ffffff", suave = cs.getPropertyValue("--tinta-suave").trim() || "#4b5159";
+    folha.textContent = "@page { background-color: " + papel + "; @top-left { color: " + suave + "; } @bottom-right { color: " + suave + "; } }";
+  }
+  pintarFolha();
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var aoMudarSistema = function () {
+      if (mq.matches) document.documentElement.setAttribute("data-sistema", "escuro"); else document.documentElement.removeAttribute("data-sistema");
+      pintarFolha();
+    };
+    if (mq.addEventListener) mq.addEventListener("change", aoMudarSistema); else if (mq.addListener) mq.addListener(aoMudarSistema);
+  }
+  window.addEventListener("beforeprint", pintarFolha);
   window.addEventListener("beforeprint", function () { limiteAntes = estado.limite; estado.limite = Infinity; render(); });
   window.addEventListener("afterprint", function () { if (limiteAntes !== null) { estado.limite = limiteAntes; limiteAntes = null; render(); } });
 

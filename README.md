@@ -153,7 +153,8 @@ texto, para auditar a classificação a olho.
 
 - **Modo apresentação** (tecla `P`, `Esc` sai): letra maior para projetor.
 - **Tema**: do sistema, claro ou escuro.
-- **Imprimir ou salvar em PDF**: sempre no tema claro, com os filtros aplicados na tela.
+- **Imprimir ou salvar em PDF**: no tema que estiver na tela (claro, escuro ou o do sistema), em A4 com
+  tipografia compacta, com os filtros aplicados na tela e a lista de reviews inteira.
 - **Link do recorte**: jogo, categoria, período, busca e ordenação ficam na URL.
 
 Para gerar o painel de novo sem reclassificar:

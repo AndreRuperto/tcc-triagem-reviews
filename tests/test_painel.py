@@ -141,7 +141,7 @@ class TestGerarPainel(unittest.TestCase):
         self.assertIn(':root:not([data-tema="claro"])', html)
         self.assertIn(':root[data-tema="escuro"]', html)
         self.assertEqual(html.count(painel.TOKENS_ESCURO), 2)
-        # impressão sempre no tema claro, com o título escapado no cabeçalho da página
+        # impressão segue o tema da tela, com o título escapado no cabeçalho da página
         self.assertIn('@top-left { content: "Título com \\"aspas\\", base de conhecimento v1.1', html)
         self.assertIn('id="b-apresentacao"', html)
 
