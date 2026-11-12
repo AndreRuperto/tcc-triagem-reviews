@@ -12,7 +12,7 @@ Toda classificação é rastreável: o sistema registra quais indicadores encont
 escores de cada grupo, a regra aplicada e a confiança. Não há aprendizado de máquina
 envolvido (justificativa em [docs/decisao_ia.md](docs/decisao_ia.md)).
 
-**Painel online:** https://painel-production-fb888da8.up.railway.app (Railway, deploy automático a cada push na `main`)
+**Painel online:** https://triagem-reviews.up.railway.app (Railway, deploy automático a cada push na `main`)
 
 **Sumário:** [Como funciona](#como-funciona) · [Executar](#como-executar) ·
 [Validação](#fluxo-de-validação) · [Painel](#painel-de-resultados) ·

@@ -81,26 +81,32 @@ def pagina_inicial(raiz: Path) -> str:
                  "<code>python main.py --entrada data/steam_*.csv --saida reports/steam</code></p>")
     return f"""<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Painéis de triagem</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;600;700&display=swap">
 <script>try {{ var t = localStorage.getItem("painel-tema"); if (t === "claro" || t === "escuro") document.documentElement.setAttribute("data-tema", t); }} catch (e) {{}}</script>
 <style>
 :root {{ {TOKENS_CLARO} }}
 @media (prefers-color-scheme: dark) {{ :root:not([data-tema="claro"]) {{ {TOKENS_ESCURO} }} }}
 :root[data-tema="escuro"] {{ {TOKENS_ESCURO} }}
 * {{ box-sizing: border-box; }}
-body {{ margin: 0; background: var(--fundo); color: var(--tinta); font: 1rem/1.5 system-ui, "Segoe UI", Roboto, Arial, sans-serif; }}
-main {{ max-width: 720px; margin: 0 auto; padding: 48px 16px; }}
-h1 {{ font-size: 1.75rem; line-height: 1.2; margin: 0 0 8px; }}
-.sub {{ color: var(--tinta-suave); margin: 0 0 16px; }}
+body {{ margin: 0; background: var(--fundo); color: var(--tinta); font: 1rem/1.55 "IBM Plex Sans", system-ui, "Segoe UI", Roboto, Arial, sans-serif; }}
+header {{ background: var(--cabeca); color: var(--cabeca-tinta); padding: 48px 16px 64px; }}
+header div {{ max-width: 760px; margin: 0 auto; }}
+header span {{ font: 500 .8125rem/1.4 "IBM Plex Mono", ui-monospace, Consolas, monospace; letter-spacing: .05em; text-transform: uppercase; color: var(--cabeca-suave); }}
+main {{ max-width: 760px; margin: -32px auto 0; padding: 0 16px 64px; }}
+h1 {{ font-size: clamp(1.9rem, 5vw, 2.6rem); line-height: 1.1; font-weight: 700; letter-spacing: -.02em; margin: 12px 0 0; }}
+.sub {{ color: var(--tinta-suave); margin: 0 0 16px; background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; padding: 12px 16px; }}
 .paineis {{ list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }}
-.paineis a {{ display: grid; gap: 2px; padding: 16px 20px; border: 1px solid var(--linha); border-left: 6px solid var(--tec);
-  border-radius: 4px; background: var(--papel); color: var(--tinta); text-decoration: none; }}
-.paineis a:hover {{ border-color: var(--tinta-suave); border-left-color: var(--tec); }}
+.paineis a {{ display: grid; gap: 4px; padding: 20px 24px; border: 1px solid var(--linha);
+  border-radius: 12px; background: var(--papel); color: var(--tinta); text-decoration: none; }}
+.paineis a:hover {{ border-color: var(--tec); }}
 .paineis a:focus-visible {{ outline: 3px solid var(--foco); outline-offset: 2px; }}
 .paineis b {{ font-size: 1.15rem; }}
 .paineis span {{ color: var(--tinta-suave); font-size: .9rem; font-variant-numeric: tabular-nums; }}
+.paineis b {{ color: var(--tec); }}
 .vazio {{ color: var(--tinta-suave); background: var(--papel); border: 1px dashed var(--linha); border-radius: 10px; padding: 16px; }}
 </style></head>
-<body><main><h1>Painéis de triagem de reviews</h1>{corpo}</main></body></html>"""
+<body><header><div><span>TCC · Ciência da Computação · UDF · 2026/2</span><h1>Painéis de triagem de reviews</h1></div></header>
+<main>{corpo}</main></body></html>"""
 
 
 class Manipulador(SimpleHTTPRequestHandler):
