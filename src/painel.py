@@ -245,12 +245,38 @@ def _json_seguro(dados: dict) -> str:
     return json.dumps(dados, ensure_ascii=False).replace("</", "<\\/")
 
 
+# Cores dos dois temas. Ficam aqui (e nao soltas no CSS) porque cada tema e
+# usado em mais de um lugar: tema do sistema, tema escolhido no painel e a
+# impressao, que sempre sai no tema claro.
+TOKENS_CLARO = """--fundo: #eef3f7; --papel: #ffffff; --tinta: #14212b; --tinta-suave: #4b5b67; --linha: #d3dde5;
+  --tec: #0b6f78; --tec-marca: #a6eef2; --afe: #a3205f; --afe-marca: #ffc9e2;
+  --ind: #77838d; --foco: #1b5fd6; --sim: #256341; --nao: #f4ae8f; color-scheme: light;"""
+TOKENS_ESCURO = """--fundo: #0e1920; --papel: #15232c; --tinta: #e4edf2; --tinta-suave: #a2b3bf; --linha: #2b3c48;
+  --tec: #5fd3db; --tec-marca: #1d5a60; --afe: #ff86bf; --afe-marca: #6a2348;
+  --ind: #7f909c; --foco: #8ab4ff; --sim: #86e0ac; --nao: #a8482a; color-scheme: dark;"""
+
+
+def _string_css(texto: str) -> str:
+    """Texto como string CSS entre aspas (para o cabecalho das paginas impressas)."""
+    return '"' + texto.replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ") + '"'
+
+
+def montar_html(dados: dict) -> str:
+    cabecalho = dados["titulo"] + (", base de conhecimento v" + dados["versao_base"] if dados["versao_base"] else "") + \
+        ", gerado em " + dados["gerado"]
+    html = (MODELO.replace("__TOKENS_CLARO__", TOKENS_CLARO)
+            .replace("__TOKENS_ESCURO__", TOKENS_ESCURO)
+            .replace("__CABECALHO_IMPRESSAO__", _string_css(cabecalho)))
+    # os dados vao por ultimo: um review que contenha "__TOKENS_CLARO__" nao e substituido
+    return html.replace("__DADOS__", _json_seguro(dados))
+
+
 def gerar_painel(pasta: Path, destino: Path = None) -> Path:
     pasta = Path(pasta)
     classificados = pd.read_csv(pasta / "reviews_classificados.csv", encoding="utf-8-sig", dtype={"id_review": str})
     dados = montar_dados(classificados, ler_avaliacao(pasta / "avaliacao"))
     destino = Path(destino) if destino else pasta / "painel.html"
-    destino.write_text(MODELO.replace("__DADOS__", _json_seguro(dados)), encoding="utf-8")
+    destino.write_text(montar_html(dados), encoding="utf-8")
     return destino
 
 
@@ -268,25 +294,40 @@ MODELO = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Triagem de reviews</title>
+<script>
+  // tema escolhido antes (claro/escuro), aplicado já no carregamento para não piscar
+  try { var t = localStorage.getItem("painel-tema"); if (t === "claro" || t === "escuro") document.documentElement.setAttribute("data-tema", t); } catch (e) {}
+</script>
 <style>
 :root {
-  --fundo: #eef3f7; --papel: #ffffff; --tinta: #14212b; --tinta-suave: #4b5b67; --linha: #d3dde5;
-  --tec: #0b6f78; --tec-marca: #a6eef2; --afe: #a3205f; --afe-marca: #ffc9e2;
-  --ind: #77838d; --foco: #1b5fd6; --sim: #256341; --nao: #f4ae8f;
+  __TOKENS_CLARO__
   --serifa: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --sans: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --r-pequeno: 4px; --r-medio: 10px;
   --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e5: 24px; --e6: 32px; --e7: 48px;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-    --fundo: #0e1920; --papel: #15232c; --tinta: #e4edf2; --tinta-suave: #a2b3bf; --linha: #2b3c48;
-    --tec: #5fd3db; --tec-marca: #1d5a60; --afe: #ff86bf; --afe-marca: #6a2348;
-    --ind: #7f909c; --foco: #8ab4ff; --sim: #86e0ac; --nao: #a8482a;
-  }
+  :root:not([data-tema="claro"]) { __TOKENS_ESCURO__ }
 }
+:root[data-tema="escuro"] { __TOKENS_ESCURO__ }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--fundo); color: var(--tinta); font: 16px/1.5 var(--sans); }
+html { font-size: 100%; }
+body { margin: 0; background: var(--fundo); color: var(--tinta); font: 1rem/1.5 var(--sans); }
+
+/* barra de ferramentas */
+.ferramentas { display: flex; flex-wrap: wrap; gap: var(--e2); justify-content: flex-end; align-items: center; margin-bottom: var(--e4); }
+.ferramentas button, .ferramentas select { font: inherit; font-size: .9rem; color: var(--tinta); background: var(--papel);
+  border: 1px solid var(--linha); border-radius: 999px; padding: var(--e2) var(--e4); min-height: 44px; cursor: pointer; }
+.ferramentas label { display: inline-flex; gap: var(--e2); align-items: center; font-size: .9rem; color: var(--tinta-suave); }
+.ferramentas button[aria-pressed="true"] { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+
+/* modo apresentação: letra maior para projetor, só o essencial */
+html.apresentacao { font-size: 125%; }
+html.apresentacao main { max-width: 1240px; }
+html.apresentacao .so-tela, html.apresentacao footer { display: none; }
+.so-impressao { display: none; }
+html.apresentacao #tempo svg { height: 300px; }
+html.apresentacao #tempo .eixo text { font-size: 15px; }
 main { max-width: 1080px; margin: 0 auto; padding: var(--e6) var(--e4) var(--e7); }
 h1 { font: 700 2rem/1.15 var(--sans); margin: 0 0 var(--e2); letter-spacing: -0.01em; }
 h2 { font: 650 1.25rem/1.3 var(--sans); margin: 0 0 var(--e3); }
@@ -446,14 +487,44 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
   .review { padding: var(--e3) var(--e4); }
 }
 @media print {
-  .filtros, .mais, .cats { display: none; }
-  .review { break-inside: avoid; }
+  /* impressão sai sempre no tema claro, com as cores dos gráficos */
+  :root, :root[data-tema] { __TOKENS_CLARO__ }
+  @page {
+    margin: 18mm 14mm;
+    @top-left { content: __CABECALHO_IMPRESSAO__; font: 8pt system-ui, sans-serif; color: #4b5b67; }
+    @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 8pt system-ui, sans-serif; color: #4b5b67; }
+  }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, html.apresentacao { font-size: 11pt; }
+  body { background: #fff; }
+  main, html.apresentacao main { max-width: none; padding: 0; }
+  section { margin-top: var(--e6); }
+  .ferramentas, .filtros, .cats, .mais, .ler, .troca, #limpar-periodo, #limpar-celula, .so-tela, #estado { display: none !important; }
+  h2 { break-after: avoid; }
+  /* seções curtas ficam inteiras numa página; só a lista de reviews se divide */
+  main > section:not([aria-labelledby="t-rev"]) { break-inside: avoid; }
+  .instrucao { display: none !important; }
+  .so-impressao { display: block; color: var(--tinta-suave); margin-bottom: var(--e3); }
+  .barra, .legenda, #tempo, .tab-jogos tr, .rec-linha, .ind-lista li, .matriz, .placar, .review, .vazio { break-inside: avoid; }
+  .rolagem { overflow: visible; }
+  .tab-jogos { min-width: 0; }
+  .jogo-btn, .ordenar, .celula-btn { border: 0; padding: 0; min-height: 0; background: none; box-shadow: none; }
+  .ordenar::after { content: none !important; }
+  .review { border-color: #c9d3db; }
+  #tempo svg { height: 200px; }
 }
 </style>
 </head>
 <body>
 <main>
   <header>
+    <div class="ferramentas" role="toolbar" aria-label="Opções de exibição">
+      <button type="button" id="b-apresentacao" aria-pressed="false" aria-keyshortcuts="P" title="Atalho: tecla P">Modo apresentação</button>
+      <label>Tema <select id="f-tema">
+        <option value="">Do sistema</option><option value="claro">Claro</option><option value="escuro">Escuro</option>
+      </select></label>
+      <button type="button" id="b-imprimir">Imprimir ou salvar em PDF</button>
+    </div>
     <h1 id="titulo"></h1>
     <p class="achado" id="achado"></p>
     <p class="contexto" id="resumo"></p>
@@ -480,7 +551,7 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
 
   <section aria-labelledby="t-jogos">
     <h2 id="t-jogos">Por jogo</h2>
-    <p class="sub" style="margin-bottom: var(--e3)">Clique no nome de um jogo para filtrar a linha do tempo e a lista de reviews. Clique no título de uma coluna para ordenar.</p>
+    <p class="sub instrucao" style="margin-bottom: var(--e3)">Clique no nome de um jogo para filtrar a linha do tempo e a lista de reviews. Clique no título de uma coluna para ordenar.</p>
     <div class="rolagem"><table class="tab-jogos" id="tab-jogos"></table></div>
   </section>
 
@@ -503,13 +574,14 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
 
   <section aria-labelledby="t-rev">
     <h2 id="t-rev">Reviews e o porquê de cada classificação</h2>
+    <p class="so-impressao" id="nota-impressao"></p>
     <p class="sub" style="margin-bottom: var(--e4)">Os indicadores encontrados aparecem marcados no texto:
       <mark class="t">técnicos</mark> e <mark class="a">afetivo-visuais</mark>. O sublinhado pontilhado indica
       <mark class="t radical">casamento pelo radical</mark> (ex.: "lagar" casando com "lag"). Reviews longos mostram só o trecho em volta dos indicadores.</p>
     <div class="filtros">
       <label>Jogo <select id="f-jogo"><option value="">Todos os jogos</option></select></label>
-      <label>Buscar no texto <input type="search" id="f-busca" placeholder="ex.: travando, rosto"></label>
-      <label>Ordenar por <select id="f-ordem">
+      <label class="so-tela">Buscar no texto <input type="search" id="f-busca" placeholder="ex.: travando, rosto"></label>
+      <label class="so-tela">Ordenar por <select id="f-ordem">
         <option value="indicadores">Mais indicadores primeiro</option>
         <option value="recentes">Mais recentes primeiro</option>
         <option value="uteis">Mais votados como úteis</option>
@@ -804,11 +876,13 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
       var m = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].find(function (k) { return k * pot >= v; });
       return Math.max(2, Math.round(m * pot));
     })(maior);
-    tempoSub.textContent = (porMes ? "Reviews por mês" : "Reviews por semana") + (estado.jogo ? " de " + estado.jogo : ", todos os jogos") +
-      ". Clique numa coluna para ver só os reviews daquele período.";
-    var W = Math.max(280, tempoBox.clientWidth || 800), H = 240, esq = 36, base = H - 28, topo = 8;
+    var descTempo = (porMes ? "Reviews por mês" : "Reviews por semana") + (estado.jogo ? " de " + estado.jogo : ", todos os jogos") + ".";
+    tempoSub.textContent = descTempo + " ";
+    tempoSub.appendChild(el("span", { classe: "instrucao", texto: "Clique numa coluna para ver só os reviews daquele período." }));
+    var H = document.documentElement.classList.contains("apresentacao") ? 300 : 240;
+    var W = Math.max(280, tempoBox.clientWidth || 800), esq = 36, base = H - 28, topo = 8;
     var largura = (W - esq) / BALDES.length, barraW = Math.max(2, Math.min(56, largura * 0.72));
-    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "group", "aria-label": tempoSub.textContent });
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "group", "aria-label": descTempo });
     var eixo = svgEl("g", { "class": "eixo", "aria-hidden": "true" });
     [0, Math.round(max / 2), max].forEach(function (v, i, arr) {
       if (i === 1 && (v === 0 || v === max)) return;
@@ -963,7 +1037,7 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
     });
     tmet.appendChild(tb2);
     avBox.appendChild(el("div", { classe: "duas" }, [el("div", { classe: "rolagem" }, [tm]), el("div", { classe: "rolagem" }, [tmet])]));
-    if (D.clicavel) avBox.appendChild(el("p", { classe: "estado", style: "margin-top:var(--e3)", texto: "Clique numa célula da matriz para ver na lista os reviews daquele par gabarito × sistema." }));
+    if (D.clicavel) avBox.appendChild(el("p", { classe: "estado instrucao", style: "margin-top:var(--e3)", texto: "Clique numa célula da matriz para ver na lista os reviews daquele par gabarito × sistema." }));
   }
 
   // reviews
@@ -1090,8 +1164,43 @@ footer { margin-top: var(--e7); color: var(--tinta-suave); font-size: .9rem; }
       ? "Mostrando " + fmt.format(Math.min(estado.limite, filtrados.length)) + " de " + fmt.format(filtrados.length) + " reviews, " + ORDENS[selOrdem.value].rotulo + "."
       : "Nenhum review com esses filtros. Tente outra categoria, limpe a busca, o período ou o filtro da matriz.";
     mais.hidden = filtrados.length <= estado.limite;
+    var filtros = [];
+    if (estado.jogo) filtros.push("jogo " + estado.jogo);
+    if (estado.cat) filtros.push("categoria " + NOMES[estado.cat]);
+    if (estado.periodo) filtros.push("período " + estado.periodo.rotulo);
+    if (estado.celula) filtros.push("matriz: gabarito " + NOMES[estado.celula.man] + ", sistema " + NOMES[estado.celula.sis]);
+    if (estado.busca) filtros.push("busca \u201c" + estado.busca + "\u201d");
+    document.getElementById("nota-impressao").textContent = "Lista impressa: " + nReviews(filtrados.length) +
+      (filtros.length ? " (" + filtros.join("; ") + ")" : ", sem filtros") + ", " + ORDENS[selOrdem.value].rotulo + ".";
   }
   render();
+
+  // barra de ferramentas: modo apresentação, tema e impressão
+  var raizHtml = document.documentElement, bApr = document.getElementById("b-apresentacao");
+  function apresentacao(ligar) {
+    raizHtml.classList.toggle("apresentacao", ligar);
+    bApr.setAttribute("aria-pressed", ligar ? "true" : "false");
+    bApr.textContent = ligar ? "Sair do modo apresentação" : "Modo apresentação";
+    desenharTempo();
+  }
+  bApr.addEventListener("click", function () { apresentacao(!raizHtml.classList.contains("apresentacao")); });
+  document.addEventListener("keydown", function (ev) {
+    var alvo = ev.target && ev.target.tagName;
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || alvo === "INPUT" || alvo === "SELECT" || alvo === "TEXTAREA") return;
+    if (ev.key === "p" || ev.key === "P") { ev.preventDefault(); apresentacao(!raizHtml.classList.contains("apresentacao")); }
+    else if (ev.key === "Escape" && raizHtml.classList.contains("apresentacao")) apresentacao(false);
+  });
+  var selTema = document.getElementById("f-tema");
+  selTema.value = raizHtml.getAttribute("data-tema") || "";
+  selTema.addEventListener("change", function () {
+    if (selTema.value) raizHtml.setAttribute("data-tema", selTema.value); else raizHtml.removeAttribute("data-tema");
+    try { if (selTema.value) localStorage.setItem("painel-tema", selTema.value); else localStorage.removeItem("painel-tema"); } catch (e) {}
+  });
+  document.getElementById("b-imprimir").addEventListener("click", function () { window.print(); });
+  // na impressão sai a lista filtrada inteira, não só os 30 primeiros
+  var limiteAntes = null;
+  window.addEventListener("beforeprint", function () { limiteAntes = estado.limite; estado.limite = Infinity; render(); });
+  window.addEventListener("afterprint", function () { if (limiteAntes !== null) { estado.limite = limiteAntes; limiteAntes = null; render(); } });
 
   document.getElementById("rodape").textContent =
     "Painel gerado pelo projeto tcc-triagem-reviews (src/painel.py). Textos de reviews longos foram cortados em " + fmt.format(""" + str(LIMITE_TEXTO) + r""") + " caracteres.";

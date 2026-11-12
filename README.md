@@ -67,6 +67,15 @@ auditável a olho. Para gerar de novo sem reclassificar:
 
     python -m src.painel --pasta reports/steam
 
+Na barra do topo do painel:
+- **Modo apresentação** (ou tecla `P`; `Esc` sai): letra maior para
+  projetor e só os filtros essenciais.
+- **Tema**: do sistema, claro ou escuro (fica lembrado no navegador).
+- **Imprimir ou salvar em PDF**: sai sempre no tema claro, com título,
+  versão da base e data no topo de cada página e a lista de reviews
+  inteira com os filtros escolhidos na tela (filtre antes para um anexo
+  menor: sem filtro são cerca de 100 páginas para 399 reviews).
+
 ### Abrir numa porta local
 Pelo Docker (fica rodando em segundo plano):
 

@@ -122,6 +122,26 @@ class TestGerarPainel(unittest.TestCase):
         self.assertNotIn("rotulos", dados["avaliacao"])   # nao vai duplicado no HTML
         self.assertIn("rotulos", av)                      # e o dict de quem chamou nao e alterado
 
+    def test_html_tem_temas_e_cabecalho_de_impressao(self):
+        dados = painel.montar_dados(self.classificados())
+        dados["titulo"] = 'Título com "aspas"'
+        html = painel.montar_html(dados)
+        self.assertNotIn("__TOKENS_", html)
+        self.assertNotIn("__CABECALHO_IMPRESSAO__", html)
+        # tema escuro: pelo sistema (se não forçado claro) e forçado pelo seletor
+        self.assertIn(':root:not([data-tema="claro"])', html)
+        self.assertIn(':root[data-tema="escuro"]', html)
+        self.assertEqual(html.count(painel.TOKENS_ESCURO), 2)
+        # impressão sempre no tema claro, com o título escapado no cabeçalho da página
+        self.assertIn('@top-left { content: "Título com \\"aspas\\", base de conhecimento v1.1', html)
+        self.assertIn('id="b-apresentacao"', html)
+
+    def test_marcador_dentro_de_um_review_nao_e_substituido(self):
+        df = self.classificados()
+        df.loc[0, "texto_original"] = "texto com __TOKENS_CLARO__ dentro"
+        html = painel.montar_html(painel.montar_dados(df))
+        self.assertIn("__TOKENS_CLARO__ dentro", dados_do_html(html)["reviews"][0]["texto"])
+
     def test_inclui_a_avaliacao_quando_existe(self):
         with tempfile.TemporaryDirectory() as pasta:
             pasta = Path(pasta)

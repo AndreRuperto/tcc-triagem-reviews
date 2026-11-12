@@ -11,7 +11,10 @@ clicável, categoria × recomendação, tabela comparativa por jogo
 ordenável, indicadores com "ver todos"). Fase 3 implementada em
 12/11/2026 (etiqueta de categoria, Misto em duas faixas sólidas em todo
 o painel, ordenação escolhível, horas e votos da Steam no cartão,
-matriz de confusão clicável com % por linha). Fases 4 e 5 pendentes.
+matriz de confusão clicável com % por linha). Fase 4 implementada em
+12/11/2026 (modo apresentação com atalho P, seletor de tema lembrado no
+navegador, impressão/PDF com cabeçalho e número de página, seções
+inteiras por página e nota dos filtros). Fase 5 pendente.
 
 ## Para que serve a tela
 
@@ -103,7 +106,7 @@ matriz de confusão clicável com % por linha). Fases 4 e 5 pendentes.
   `categoria_manual` nos dados do painel quando houver gabarito).
   Adicionar % por linha abaixo de cada número.
 
-### Fase 4: modo apresentação e PDF
+### Fase 4: modo apresentação e PDF (feita)
 - **4.1 Botão "Modo apresentação":** aumenta a escala tipográfica
   (base 20 px), esconde filtros secundários e limita a largura para
   projetor. Atalho de teclado `P`.
