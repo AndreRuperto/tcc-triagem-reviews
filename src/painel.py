@@ -402,6 +402,11 @@ p { margin: 0; }
 .barra-topo { display: flex; flex-wrap: wrap; gap: var(--e3); justify-content: space-between; align-items: center; }
 .marca { display: inline-flex; align-items: center; gap: var(--e3); }
 .marca-simbolo { flex: none; color: var(--cabeca-tinta); }
+.voltar { display: inline-flex; align-items: center; gap: var(--e2); min-height: 44px; padding: 0 var(--e4) 0 var(--e3); margin-right: var(--e2);
+  border: 1px solid var(--cabeca-linha); border-radius: var(--r-pilula); color: var(--cabeca-tinta); text-decoration: none; font-size: var(--t-p); }
+.voltar[hidden] { display: none; }
+.voltar:hover { border-color: var(--cabeca-suave); }
+.voltar:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
 .marca-t { stroke: #5b93ea; } .marca-a { stroke: #f08a52; }
 .kicker { font-size: .8125rem; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--cabeca-suave); }
 .contexto { color: var(--cabeca-suave); font-size: 1.0625rem; line-height: 1.55; max-width: 70ch; }
@@ -746,7 +751,7 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
   h2 { font-size: 11.5pt; break-after: avoid; }
   h3 { font-size: 9.5pt; margin-bottom: 4pt; }
   .sub { font-size: 7.5pt; max-width: none; }
-  .instrucao, .dd, .ferramentas, .filtros, .cats, .mais, .ler, .troca, #limpar-periodo, #limpar-celula, .so-tela, #estado, .indice, .comando button { display: none !important; }
+  .instrucao, .voltar, .dd, .ferramentas, .filtros, .cats, .mais, .ler, .troca, #limpar-periodo, #limpar-celula, .so-tela, #estado, .indice, .comando button { display: none !important; }
   .so-impressao { display: block; color: var(--tinta-suave); font-size: 7.5pt; margin-bottom: 5pt; }
 
   /* visão geral */
@@ -826,7 +831,7 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
 <header class="cabeca-pagina">
   <div class="envolve">
     <div class="barra-topo">
-      <span class="marca">__LOGO__<span class="kicker" id="kicker"></span></span>
+      <span class="marca"><a class="voltar" id="voltar" href="/" hidden><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Todos os painéis</a>__LOGO__<span class="kicker" id="kicker"></span></span>
       <div class="ferramentas" role="toolbar" aria-label="Opções de exibição">
         <button type="button" id="b-apresentacao" aria-pressed="false" aria-keyshortcuts="P" title="Atalho: tecla P">Modo apresentação</button>
         <label>Tema <select id="f-tema">
@@ -1645,6 +1650,9 @@ footer { color: var(--tinta-suave); font-size: var(--t-p); }
   });
   lerDaUrl();
   render();
+
+  // "Todos os painéis" só quando servido (no arquivo aberto offline, "/" seria a raiz do disco)
+  if (/^https?:$/.test(location.protocol)) document.getElementById("voltar").hidden = false;
 
   // barra de ferramentas: modo apresentação, tema e impressão
   var raizHtml = document.documentElement, bApr = document.getElementById("b-apresentacao");
