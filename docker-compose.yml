@@ -10,7 +10,7 @@ services:
     restart: "no"
 
   # Serve os relatorios (painel.html) numa porta local:
-  #   docker compose up -d painel  ->  http://localhost:8090/steam/painel.html
+  #   docker compose up -d painel  ->  http://localhost:8090/steam
   # Outra porta: PAINEL_PORTA=9000 docker compose up -d painel
   # A porta fica presa a 127.0.0.1: na VM o painel NAO fica exposto na
   # internet; para ver do seu computador use um tunel SSH (ver README).

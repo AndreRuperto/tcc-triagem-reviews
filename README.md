@@ -19,7 +19,8 @@ Toda classificação é rastreável: o sistema registra quais indicadores encont
 escores de cada grupo, a regra aplicada e a confiança. Não há aprendizado de máquina
 envolvido (justificativa em [docs/decisao_ia.md](docs/decisao_ia.md)).
 
-**Painel online:** https://triagem-reviews.up.railway.app (Railway, deploy automático a cada push na `main`)
+**Painel online:** https://triagem-reviews.up.railway.app/steam (Railway, deploy automático a cada push na `main`;
+a lista de painéis fica em https://triagem-reviews.up.railway.app)
 
 **Sumário:** [Como funciona](#como-funciona) · [Executar](#como-executar) ·
 [Validação](#fluxo-de-validação) · [Painel](#painel-de-resultados) ·
@@ -186,7 +187,9 @@ docker compose up -d painel
 ```
 
 Abre em http://localhost:8090. Para parar, use `docker compose stop painel`. Sem Docker, o
-equivalente é `python -m src.servidor`. A página inicial lista os painéis de `reports/`.
+equivalente é `python -m src.servidor`. A página inicial lista os painéis de `reports/`, e cada um
+tem uma rota própria: `reports/<pasta>/painel.html` fica em `/<pasta>` (o da Steam em `/steam`) e o
+de exemplo em `/exemplo`. Os endereços antigos terminados em `painel.html` redirecionam para a rota nova.
 Para usar outra porta: `PAINEL_PORTA=9000` no Docker ou `--porta 9000` no Python.
 
 A porta fica presa a 127.0.0.1, então na VM o painel não fica exposto na internet. Para

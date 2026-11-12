@@ -10,7 +10,7 @@
   - `src/amostragem.py`: amostra estratificada e cega para o gabarito;
   - `src/avaliacao.py`: matriz de confusão, precisão/revocação/F1, kappa entre anotadores, lista de divergências.
 - `main.py --entrada/--saida` para classificar um ou vários CSVs.
-- Painel HTML offline para a banca (`src/painel.py`): gerado em cada pasta de relatórios; o das reviews da Steam está em `reports/steam/painel.html`. Para abrir numa porta local: `docker compose up -d painel` (ou `python -m src.servidor`) → http://localhost:8090.
+- Painel HTML offline para a banca (`src/painel.py`): gerado em cada pasta de relatórios; o das reviews da Steam está em `reports/steam/painel.html`. Para abrir numa porta local: `docker compose up -d painel` (ou `python -m src.servidor`) → http://localhost:8090 (rotas: `/steam`, `/exemplo`).
 - Protocolo de rotulagem (rascunho): `docs/protocolo_rotulagem.md`.
 - 60 testes (`python -m unittest discover -s tests`).
 
